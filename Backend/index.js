@@ -51,38 +51,12 @@ export async function prenotazioni(filters = {}) {
     }
 }
 
-//POST prenotazione, per creare una nuova prenotazione, permessi Docente,ATA,ADMIN
-
-import { pool } from '../db.js';
-
-export async function createPrenotazione(data) {
-    const { nome, cognome, email, data_prenotazione, ora_prenotazione } = data;
-
-    try {
-        const [result] = await pool.query(
-            `INSERT INTO prenotazioni 
-            (nome, cognome, email, data_prenotazione, ora_prenotazione) 
-            VALUES (?, ?, ?, ?, ?)`,
-            [nome, cognome, email, data_prenotazione, ora_prenotazione]
-        );
-
-        return {
-            id: result.insertId,
-            nome,
-            cognome,
-            email,
-            data_prenotazione,
-            ora_prenotazione
-        };
-
-    } catch (error) {
-        console.error('Error creating prenotazione:', error);
-        throw error;
-    }
-}
+//POST prenotazione, per creare una nuova prenotazione, permessi Docente,ATA,ADMIN. La prenotazione va sull'aula e ci va: id, aula_id, utente_id, data, ora_inizio, ora_fine, created_at. 
+//da corregere
 
 
 //delete prenotazioni/:id, per eliminare una prenotazione esistente, permessi: il docente può eliminare solo le proprie prenotazioni, l'admin può eliminare tutte le prenotazioni
+//da corregere
 export async function deletePrenotazione(id, user) {
     try {
         let query = 'DELETE FROM prenotazioni WHERE id = ?';
@@ -119,3 +93,23 @@ export async function aule() {
 }
 
 //GET /classi, per restituire tutte le classi disponibili, permessi tutti
+export async function classi() {
+    try {
+        const [rows] = await pool.query('SELECT * FROM classi');
+        return rows;
+    } catch (error) {
+        console.error('Error fetching classi:', error);
+        throw error;
+    }
+}
+
+//GET /utente, per restituire i dati dell'utente autenticato, permessi tutti
+export async function getUtente(email) {
+    try {
+        const [rows] = await pool.query('SELECT * FROM utenti WHERE email = ?', [email]);
+        return rows[0];
+    } catch (error) {
+        console.error('Error fetching utente:', error);
+        throw error;
+    }
+}
