@@ -1,0 +1,418 @@
+import { useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { apiFetch } from '../app/api/client.js'
+import { useAuth } from '../app/auth/AuthProvider.jsx'
+import { normalizeBooking } from '../app/domain/bookings.js'
+import { getSchoolFloorGrid, SCHOOL_FLOORS } from '../app/domain/schoolFloors.js'
+import { BookingModal } from '../components/BookingModal.jsx'
+
+const CELL_W = 54
+const CELL_H = 46
+const GAP = 10
+const MARGIN = 22
+const CORRIDOR_H = 44
+const TITLE_H = 48
+
+function todayStr() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function floorIndexForRoom(num) {
+  const n = Number(num)
+  if (!Number.isFinite(n)) return 0
+  for (let i = 0; i < SCHOOL_FLOORS.length; i++) {
+    const f = SCHOOL_FLOORS[i]
+    if (n >= f.roomStart && n <= f.roomEnd) return i
+  }
+  return 0
+}
+
+function floorGradientTint(floorIndex) {
+  const t = [
+    { free0: '#1a6b5c', free1: '#2dd4bf', busy0: '#8b2940', busy1: '#ff6b8a' },
+    { free0: '#2a3a7a', free1: '#5b8def', busy0: '#6b2040', busy1: '#ff7a9a' },
+    { free0: '#6b4520', free1: '#e8a45c', busy0: '#7a2830', busy1: '#ff8a9c' },
+  ]
+  return t[floorIndex] ?? t[0]
+}
+
+function buildSvgMetrics(rows, cols) {
+  const gridW = cols * CELL_W + (cols - 1) * GAP
+  const gridH = rows * CELL_H + (rows - 1) * GAP
+  const w = MARGIN * 2 + gridW
+  const h = MARGIN * 2 + TITLE_H + gridH + 10 + CORRIDOR_H
+  return { w, h, gridW, gridH }
+}
+
+export function Map2DPage() {
+  const { token, user } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [date, setDate] = useState(todayStr())
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [selectedAula, setSelectedAula] = useState(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [activeFloor, setActiveFloor] = useState(0)
+  const [slideDir, setSlideDir] = useState(1)
+
+  const canCreate = useMemo(() => {
+    const role = (user?.ruolo ?? user?.role ?? '').toString().toLowerCase()
+    return role === 'admin' || role === 'amministratore' || role === 'docente' || role === 'ata'
+  }, [user])
+
+  useEffect(() => {
+    const raw = searchParams.get('aula')
+    if (raw == null || raw === '') return
+    const num = Number(raw)
+    if (!Number.isFinite(num)) return
+    setSelectedAula(num)
+    setActiveFloor(floorIndexForRoom(num))
+  }, [searchParams])
+
+  async function load() {
+    setLoading(true)
+    try {
+      const qs = new URLSearchParams()
+      qs.set('data', date)
+      const payload = await apiFetch(`/prenotazioni?${qs.toString()}`, { token })
+      const list = Array.isArray(payload) ? payload : payload?.data ?? []
+      setBookings(list.map(normalizeBooking))
+    } catch (e) {
+      toast.error(e?.message || 'Errore caricamento prenotazioni')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date])
+
+  const occupiedSet = useMemo(() => {
+    const set = new Set()
+    for (const b of bookings) {
+      const n = b.aulaNumero ?? b.aulaId
+      if (n != null) set.add(String(n))
+    }
+    return set
+  }, [bookings])
+
+  const grid = useMemo(() => getSchoolFloorGrid(activeFloor), [activeFloor])
+  const metrics = useMemo(
+    () => buildSvgMetrics(grid.rows, grid.cols),
+    [grid.rows, grid.cols],
+  )
+
+  const floorSummary = SCHOOL_FLOORS[activeFloor]
+  const busyOnFloor = useMemo(() => {
+    return grid.items.filter((it) => occupiedSet.has(String(it.number))).length
+  }, [grid.items, occupiedSet])
+
+  function goToFloor(index) {
+    if (index === activeFloor) return
+    setSlideDir(index > activeFloor ? 1 : -1)
+    setActiveFloor(index)
+  }
+
+  function roomClass(number) {
+    const occupied = occupiedSet.has(String(number))
+    const selected = selectedAula === number
+    let c = 'map2d-room'
+    if (occupied) c += ' map2d-room--busy'
+    else c += ' map2d-room--free'
+    if (selected) c += ' map2d-room--selected'
+    return c
+  }
+
+  function onRoomActivate(number) {
+    setSelectedAula(number)
+    navigate(`/calendario?aula=${number}`, { replace: false })
+  }
+
+  const baseY = MARGIN + TITLE_H
+  const atrioCol = grid.atrioCol
+  const westW = 5 * CELL_W + 4 * GAP
+  const wingLabelY = baseY - 6
+  const westLabelX = MARGIN + westW / 2
+  const atrioLabelX = MARGIN + atrioCol * (CELL_W + GAP) + CELL_W / 2
+  const eastStartX = MARGIN + (atrioCol + 1) * (CELL_W + GAP)
+  const eastLabelX = eastStartX + westW / 2
+
+  return (
+    <div className="page">
+      <header className="pageHeader">
+        <div>
+          <div className="pageTitle">Mappa scuola (2D)</div>
+          <div className="muted">
+            Due ali collegate da un atrio centrale (spazi vuoti). Occupate in rosso, libere in verde/blu, selezione in
+            ciano. Clic su un’aula per il calendario.
+          </div>
+        </div>
+        <div className="toolbarRight">
+          <div style={{ minWidth: 180 }}>
+            <div className="label">Data</div>
+            <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <button className="btn" disabled={loading} onClick={load}>
+            Aggiorna
+          </button>
+          {canCreate && selectedAula ? (
+            <button className="btn btn-primary" onClick={() => setCreateOpen(true)}>
+              Prenota Aula {selectedAula}
+            </button>
+          ) : null}
+        </div>
+      </header>
+
+      <div className="glass map3d-floor-panel" style={{ padding: 12, marginBottom: 12 }}>
+        <div className="map3d-floor-tabs" role="tablist" aria-label="Selezione piano">
+          {SCHOOL_FLOORS.map((f, i) => {
+            const active = i === activeFloor
+            return (
+              <motion.button
+                key={f.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`btn map3d-floor-tab${active ? ' map3d-floor-tab-active' : ''}`}
+                onClick={() => goToFloor(i)}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 28 }}
+              >
+                <span className="map3d-floor-tab-title">{f.label}</span>
+                <span className="map3d-floor-tab-meta muted">
+                  Aule {f.roomStart}–{f.roomEnd}
+                </span>
+              </motion.button>
+            )
+          })}
+        </div>
+        <div className="map2d-legend" style={{ marginTop: 12 }}>
+          <span className="map2d-legend-item">
+            <span className="map2d-swatch map2d-swatch--free" /> Libera
+          </span>
+          <span className="map2d-legend-item">
+            <span className="map2d-swatch map2d-swatch--busy" /> Occupata (in questa data)
+          </span>
+          <span className="map2d-legend-item">
+            <span className="map2d-swatch map2d-swatch--selected" /> Selezionata
+          </span>
+          <span className="map2d-legend-item muted" style={{ fontSize: 12 }}>
+            <span className="map2d-swatch map2d-swatch--void" /> Vuoti / atrio
+          </span>
+          <span className="muted" style={{ fontSize: 12, marginLeft: 'auto' }}>
+            {busyOnFloor} occupate su {grid.count} in {floorSummary.label}
+          </span>
+        </div>
+      </div>
+
+      <div className="glass map2d-wrap" style={{ padding: 16 }}>
+        <AnimatePresence mode="wait" custom={slideDir}>
+          <motion.svg
+            key={activeFloor}
+            className="map2d-svg"
+            viewBox={`0 0 ${metrics.w} ${metrics.h}`}
+            role="img"
+            aria-label={`Planimetria ${floorSummary.label}`}
+            custom={slideDir}
+            initial={(dir) => ({ opacity: 0, x: dir * 28, filter: 'blur(5px)' })}
+            animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+            exit={(dir) => ({ opacity: 0, x: dir * -18, filter: 'blur(4px)' })}
+            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <defs>
+              <filter id={`map2d-glow-${activeFloor}`} x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2.2" result="b" />
+                <feMerge>
+                  <feMergeNode in="b" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <filter id={`map2d-soft-${activeFloor}`} x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000000" floodOpacity="0.35" />
+              </filter>
+              <linearGradient id={`map2d-building-${activeFloor}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="rgba(22, 26, 48, 0.92)" />
+                <stop offset="100%" stopColor="rgba(10, 12, 28, 0.88)" />
+              </linearGradient>
+              {(() => {
+                const g = floorGradientTint(activeFloor)
+                return (
+                  <>
+                    <linearGradient id={`map2d-free-${activeFloor}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={g.free0} stopOpacity="0.55" />
+                      <stop offset="100%" stopColor={g.free1} stopOpacity="0.38" />
+                    </linearGradient>
+                    <linearGradient id={`map2d-busy-${activeFloor}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={g.busy0} stopOpacity="0.65" />
+                      <stop offset="100%" stopColor={g.busy1} stopOpacity="0.45" />
+                    </linearGradient>
+                  </>
+                )
+              })()}
+              <pattern id={`map2d-void-pattern-${activeFloor}`} width="8" height="8" patternUnits="userSpaceOnUse">
+                <path
+                  d="M0 8 L8 0 M-2 2 L2 -2 M6 10 L10 6"
+                  className="map2d-void-pattern-line"
+                  strokeWidth="1"
+                  fill="none"
+                />
+              </pattern>
+            </defs>
+
+            <rect
+              x={4}
+              y={4}
+              width={metrics.w - 8}
+              height={metrics.h - 8}
+              rx={18}
+              fill={`url(#map2d-building-${activeFloor})`}
+              stroke="rgba(180, 160, 255, 0.28)"
+              strokeWidth={1.5}
+            />
+
+            <text x={metrics.w / 2} y={MARGIN + 19} textAnchor="middle" className="map2d-floor-title">
+              {floorSummary.label}
+            </text>
+            <text x={metrics.w / 2} y={MARGIN + 36} textAnchor="middle" className="map2d-floor-subtitle">
+              Aule {floorSummary.roomStart}–{floorSummary.roomEnd} · atrio centrale
+            </text>
+
+            <rect
+              x={MARGIN}
+              y={baseY + metrics.gridH + 10}
+              width={metrics.gridW}
+              height={CORRIDOR_H - 8}
+              rx={12}
+              className="map2d-corridor"
+            />
+            <line
+              x1={MARGIN + 12}
+              y1={baseY + metrics.gridH + 10 + (CORRIDOR_H - 8) / 2}
+              x2={MARGIN + metrics.gridW - 12}
+              y2={baseY + metrics.gridH + 10 + (CORRIDOR_H - 8) / 2}
+              className="map2d-corridor-line"
+            />
+            <text
+              x={MARGIN + metrics.gridW / 2}
+              y={baseY + metrics.gridH + 10 + (CORRIDOR_H - 8) / 2 + 5}
+              textAnchor="middle"
+              className="map2d-corridor-label"
+            >
+              Corridoio principale
+            </text>
+
+            <text x={westLabelX} y={wingLabelY} textAnchor="middle" className="map2d-wing-label">
+              Ala ovest
+            </text>
+            <text x={atrioLabelX} y={wingLabelY} textAnchor="middle" className="map2d-wing-label map2d-wing-label--atrio">
+              Atrio
+            </text>
+            <text x={eastLabelX} y={wingLabelY} textAnchor="middle" className="map2d-wing-label">
+              Ala est
+            </text>
+
+            {grid.cells.map((cell) => {
+              const x = MARGIN + cell.col * (CELL_W + GAP)
+              const y = baseY + cell.row * (CELL_H + GAP)
+              if (cell.kind === 'void') {
+                const isAtrio = cell.col === atrioCol
+                return (
+                  <rect
+                    key={`v-${cell.row}-${cell.col}`}
+                    x={x}
+                    y={y}
+                    width={CELL_W}
+                    height={CELL_H}
+                    rx={9}
+                    className={isAtrio ? 'map2d-void map2d-void--atrio' : 'map2d-void'}
+                    fill={isAtrio ? `url(#map2d-void-pattern-${activeFloor})` : undefined}
+                  />
+                )
+              }
+              const number = cell.number
+              const selected = selectedAula === number
+              const busy = occupiedSet.has(String(number))
+              return (
+                <g
+                  key={number}
+                  role="button"
+                  tabIndex={0}
+                  className="map2d-room-hit"
+                  onClick={() => onRoomActivate(number)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onRoomActivate(number)
+                    }
+                  }}
+                  aria-label={`Aula ${number}${busy ? ', occupata' : ', libera'}${selected ? ', selezionata' : ''}`}
+                >
+                  <rect
+                    x={x}
+                    y={y}
+                    width={CELL_W}
+                    height={CELL_H}
+                    rx={10}
+                    className={roomClass(number)}
+                    fill={busy ? `url(#map2d-busy-${activeFloor})` : `url(#map2d-free-${activeFloor})`}
+                    filter={selected ? `url(#map2d-glow-${activeFloor})` : `url(#map2d-soft-${activeFloor})`}
+                  />
+                  <text
+                    x={x + CELL_W / 2}
+                    y={y + CELL_H / 2 + 6}
+                    textAnchor="middle"
+                    className="map2d-room-label"
+                    pointerEvents="none"
+                  >
+                    {number}
+                  </text>
+                </g>
+              )
+            })}
+          </motion.svg>
+        </AnimatePresence>
+      </div>
+
+      <div className="glass" style={{ padding: 12 }}>
+        <div className="toolbar">
+          <div className="toolbarLeft">
+            <div className="muted" style={{ fontSize: 13 }}>
+              Selezione: {selectedAula ? `Aula ${selectedAula}` : '—'} ·{' '}
+              <span className="muted">URL: </span>
+              <code style={{ fontSize: 12 }}>/mappa-scuola?aula=</code>
+              <span className="muted" style={{ fontSize: 12 }}>
+                {' '}
+                (numero)
+              </span>
+            </div>
+          </div>
+          <div className="toolbarRight">
+            {selectedAula ? (
+              <button className="btn" onClick={() => setSelectedAula(null)}>
+                Deseleziona
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <BookingModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={load}
+        preset={{ date, aulaId: selectedAula }}
+        filterAulaId={selectedAula}
+      />
+    </div>
+  )
+}

@@ -1,12 +1,13 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useMemo } from 'react'
-import { CalendarDays, LayoutDashboard, LogOut, Map, Table } from 'lucide-react'
+import { CalendarDays, LayoutDashboard, LogOut, Map, MapPin, Table } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider.jsx'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/calendario', label: 'Calendario', icon: CalendarDays },
   { to: '/prenotazioni', label: 'Prenotazioni', icon: Table },
+  { to: '/mappa-scuola', label: 'Mappa scuola', icon: MapPin },
   { to: '/mappa-3d', label: 'Mappa 3D', icon: Map },
 ]
 
