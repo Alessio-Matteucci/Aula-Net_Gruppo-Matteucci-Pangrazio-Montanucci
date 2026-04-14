@@ -101,7 +101,7 @@ export function DashboardPage() {
         <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--text-2)' }}>
           <li>Usa “Calendario” per creare e gestire prenotazioni.</li>
           <li>Usa “Prenotazioni” per filtri rapidi per aula/classe.</li>
-          <li>Usa “Mappa 3D” per una vista immediata della disponibilità.</li>
+          <li>Usa “Mappa scuola” per una vista immediata della disponibilità.</li>
         </ul>
       </div>
     </div>
