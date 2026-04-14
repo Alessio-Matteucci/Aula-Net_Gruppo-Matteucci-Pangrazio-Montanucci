@@ -376,7 +376,7 @@ export function Map3DPage() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
-        <Canvas camera={{ position: [0, 9, 11.5], fov: 52 }}>
+        <Canvas camera={{ position: [0, 10, 15], fov: 50 }}>
           <ambientLight intensity={0.5} />
           <directionalLight position={[10, 14, 8]} intensity={0.95} />
           <FloorLevel

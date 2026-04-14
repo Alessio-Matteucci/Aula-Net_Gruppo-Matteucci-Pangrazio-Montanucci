@@ -314,8 +314,14 @@ code {
   text-transform: uppercase;
 }
 
-.map2d-wing-label--atrio {
-  fill: rgba(34, 211, 238, 0.45);
+.map2d-wing-label--south {
+  fill: rgba(200, 210, 235, 0.38);
+}
+
+.map2d-corridor-band {
+  fill: rgba(72, 78, 105, 0.42);
+  stroke: rgba(124, 58, 237, 0.22);
+  stroke-width: 1.25;
 }
 
 .map2d-corridor {
@@ -336,15 +342,19 @@ code {
   stroke-width: 1;
 }
 
-.map2d-void--atrio {
-  fill: rgba(34, 211, 238, 0.06);
-  stroke: rgba(34, 211, 238, 0.22);
-  stroke-width: 1.25;
-  stroke-dasharray: 4 6;
+.map2d-stair {
+  fill: rgba(100, 95, 130, 0.38);
+  stroke: rgba(251, 191, 36, 0.45);
+  stroke-width: 1.5;
 }
 
-.map2d-void-pattern-line {
-  stroke: rgba(34, 211, 238, 0.2);
+.map2d-stair-label {
+  fill: rgba(255, 248, 230, 0.92);
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--sans);
+  letter-spacing: 0.04em;
+  pointer-events: none;
 }
 
 .map2d-corridor-label {
@@ -440,6 +450,11 @@ code {
   background: rgba(34, 211, 238, 0.08);
   border-color: rgba(180, 160, 255, 0.25);
   border-style: dashed;
+}
+
+.map2d-swatch--stair {
+  background: rgba(251, 191, 36, 0.2);
+  border-color: rgba(251, 191, 36, 0.55);
 }
 
 .grid4 {

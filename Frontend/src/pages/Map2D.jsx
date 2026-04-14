@@ -5,15 +5,20 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { apiFetch } from '../app/api/client.js'
 import { useAuth } from '../app/auth/AuthProvider.jsx'
 import { normalizeBooking } from '../app/domain/bookings.js'
-import { getSchoolFloorGrid, SCHOOL_FLOORS } from '../app/domain/schoolFloors.js'
+import {
+  getSchoolFloorGrid,
+  SCHOOL_FLOORS,
+  STAIR_SHORT_LABEL,
+  STAIR_TINY,
+} from '../app/domain/schoolFloors.js'
 import { BookingModal } from '../components/BookingModal.jsx'
 
 const CELL_W = 54
 const CELL_H = 46
 const GAP = 10
 const MARGIN = 22
-const CORRIDOR_H = 44
-const TITLE_H = 48
+const TITLE_H = 52
+const GRID_BOTTOM_PAD = 34
 
 function todayStr() {
   const d = new Date()
@@ -46,7 +51,7 @@ function buildSvgMetrics(rows, cols) {
   const gridW = cols * CELL_W + (cols - 1) * GAP
   const gridH = rows * CELL_H + (rows - 1) * GAP
   const w = MARGIN * 2 + gridW
-  const h = MARGIN * 2 + TITLE_H + gridH + 10 + CORRIDOR_H
+  const h = MARGIN * 2 + TITLE_H + gridH + GRID_BOTTOM_PAD
   return { w, h, gridW, gridH }
 }
 
@@ -138,13 +143,9 @@ export function Map2DPage() {
   }
 
   const baseY = MARGIN + TITLE_H
-  const atrioCol = grid.atrioCol
-  const westW = 5 * CELL_W + 4 * GAP
-  const wingLabelY = baseY - 6
-  const westLabelX = MARGIN + westW / 2
-  const atrioLabelX = MARGIN + atrioCol * (CELL_W + GAP) + CELL_W / 2
-  const eastStartX = MARGIN + (atrioCol + 1) * (CELL_W + GAP)
-  const eastLabelX = eastStartX + westW / 2
+  const corridorRow = grid.corridorRow
+  const wingLabelY = baseY - 5
+  const cx = MARGIN + metrics.gridW / 2
 
   return (
     <div className="page">
@@ -152,8 +153,8 @@ export function Map2DPage() {
         <div>
           <div className="pageTitle">Mappa scuola (2D)</div>
           <div className="muted">
-            Due ali collegate da un atrio centrale (spazi vuoti). Occupate in rosso, libere in verde/blu, selezione in
-            ciano. Clic su un’aula per il calendario.
+            Planimetria a U come il piano di sicurezza (corridoio centrale, fila aule a sud, scale A / B e scale di
+            emergenza). Colori: libera / occupata / selezionata. Clic su un’aula per il calendario.
           </div>
         </div>
         <div className="toolbarRight">
@@ -207,7 +208,10 @@ export function Map2DPage() {
             <span className="map2d-swatch map2d-swatch--selected" /> Selezionata
           </span>
           <span className="map2d-legend-item muted" style={{ fontSize: 12 }}>
-            <span className="map2d-swatch map2d-swatch--void" /> Vuoti / atrio
+            <span className="map2d-swatch map2d-swatch--void" /> Vuoti
+          </span>
+          <span className="map2d-legend-item muted" style={{ fontSize: 12 }}>
+            <span className="map2d-swatch map2d-swatch--stair" /> Scale
           </span>
           <span className="muted" style={{ fontSize: 12, marginLeft: 'auto' }}>
             {busyOnFloor} occupate su {grid.count} in {floorSummary.label}
@@ -259,14 +263,6 @@ export function Map2DPage() {
                   </>
                 )
               })()}
-              <pattern id={`map2d-void-pattern-${activeFloor}`} width="8" height="8" patternUnits="userSpaceOnUse">
-                <path
-                  d="M0 8 L8 0 M-2 2 L2 -2 M6 10 L10 6"
-                  className="map2d-void-pattern-line"
-                  strokeWidth="1"
-                  fill="none"
-                />
-              </pattern>
             </defs>
 
             <rect
@@ -284,48 +280,54 @@ export function Map2DPage() {
               {floorSummary.label}
             </text>
             <text x={metrics.w / 2} y={MARGIN + 36} textAnchor="middle" className="map2d-floor-subtitle">
-              Aule {floorSummary.roomStart}–{floorSummary.roomEnd} · atrio centrale
+              {floorSummary.buildingNote ?? 'Istituto'} · aule {floorSummary.roomStart}–{floorSummary.roomEnd}
             </text>
 
-            <rect
-              x={MARGIN}
-              y={baseY + metrics.gridH + 10}
-              width={metrics.gridW}
-              height={CORRIDOR_H - 8}
-              rx={12}
-              className="map2d-corridor"
-            />
-            <line
-              x1={MARGIN + 12}
-              y1={baseY + metrics.gridH + 10 + (CORRIDOR_H - 8) / 2}
-              x2={MARGIN + metrics.gridW - 12}
-              y2={baseY + metrics.gridH + 10 + (CORRIDOR_H - 8) / 2}
-              className="map2d-corridor-line"
-            />
+            <text x={cx} y={wingLabelY} textAnchor="middle" className="map2d-wing-label">
+              Nord — ali, aule e collegamenti verticali
+            </text>
+
+            {corridorRow != null ? (
+              <>
+                <rect
+                  x={MARGIN - 2}
+                  y={baseY + corridorRow * (CELL_H + GAP) - 2}
+                  width={metrics.gridW + 4}
+                  height={CELL_H + 4}
+                  rx={10}
+                  className="map2d-corridor-band"
+                />
+                <line
+                  x1={MARGIN + 10}
+                  y1={baseY + corridorRow * (CELL_H + GAP) + (CELL_H + 4) / 2}
+                  x2={MARGIN + metrics.gridW - 10}
+                  y2={baseY + corridorRow * (CELL_H + GAP) + (CELL_H + 4) / 2}
+                  className="map2d-corridor-line"
+                />
+                <text
+                  x={cx}
+                  y={baseY + corridorRow * (CELL_H + GAP) + (CELL_H + 4) / 2 + 4}
+                  textAnchor="middle"
+                  className="map2d-corridor-label"
+                >
+                  Corridoio principale (asse orizzontale)
+                </text>
+              </>
+            ) : null}
+
             <text
-              x={MARGIN + metrics.gridW / 2}
-              y={baseY + metrics.gridH + 10 + (CORRIDOR_H - 8) / 2 + 5}
+              x={cx}
+              y={baseY + (grid.rows - 1) * (CELL_H + GAP) + CELL_H + 14}
               textAnchor="middle"
-              className="map2d-corridor-label"
+              className="map2d-wing-label map2d-wing-label--south"
             >
-              Corridoio principale
-            </text>
-
-            <text x={westLabelX} y={wingLabelY} textAnchor="middle" className="map2d-wing-label">
-              Ala ovest
-            </text>
-            <text x={atrioLabelX} y={wingLabelY} textAnchor="middle" className="map2d-wing-label map2d-wing-label--atrio">
-              Atrio
-            </text>
-            <text x={eastLabelX} y={wingLabelY} textAnchor="middle" className="map2d-wing-label">
-              Ala est
+              Sud — fila aule su corridoio
             </text>
 
             {grid.cells.map((cell) => {
               const x = MARGIN + cell.col * (CELL_W + GAP)
               const y = baseY + cell.row * (CELL_H + GAP)
               if (cell.kind === 'void') {
-                const isAtrio = cell.col === atrioCol
                 return (
                   <rect
                     key={`v-${cell.row}-${cell.col}`}
@@ -334,12 +336,29 @@ export function Map2DPage() {
                     width={CELL_W}
                     height={CELL_H}
                     rx={9}
-                    className={isAtrio ? 'map2d-void map2d-void--atrio' : 'map2d-void'}
-                    fill={isAtrio ? `url(#map2d-void-pattern-${activeFloor})` : undefined}
+                    className="map2d-void"
                   />
                 )
               }
+              if (cell.kind === 'stair' && cell.stairId) {
+                const label = STAIR_TINY[cell.stairId] ?? cell.stairId
+                return (
+                  <g key={`s-${cell.row}-${cell.col}`}>
+                    <title>{STAIR_SHORT_LABEL[cell.stairId] ?? cell.stairId}</title>
+                    <rect x={x} y={y} width={CELL_W} height={CELL_H} rx={8} className="map2d-stair" />
+                    <text
+                      x={x + CELL_W / 2}
+                      y={y + CELL_H / 2 + 4}
+                      textAnchor="middle"
+                      className="map2d-stair-label"
+                    >
+                      {label}
+                    </text>
+                  </g>
+                )
+              }
               const number = cell.number
+              if (number == null) return null
               const selected = selectedAula === number
               const busy = occupiedSet.has(String(number))
               return (

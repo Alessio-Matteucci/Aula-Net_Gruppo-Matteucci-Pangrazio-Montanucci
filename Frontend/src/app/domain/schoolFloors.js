@@ -1,17 +1,100 @@
 /**
- * Planimetrie 3 piani: griglia con celle vuote (atrio / vuoti) e stessa numerazione 1–119.
- * Colonna centrale `null` = spazio aperto tra le due ali.
+ * Planimetria stilizzata sul piano di sicurezza ITT Allievi–Sangallo (Terni):
+ * forma a U, corridoio orizzontale centrale, fila di aule a sud, ali e scale a nord.
+ * Quattro blocchi scala: Scala em. A, Scala A, Scala B, Scala em. B.
+ *
+ * Numerazione aule resta quella dell’app (1–119 su tre piani).
  */
 
-const ATRIO_COL = 5
+/** @typedef {'S_EA'|'S_A'|'S_B'|'S_EB'} StairId */
 
-function planColToX(col, roomSpacing, atrioExtra) {
-  let x = col * roomSpacing
-  if (col > ATRIO_COL) x += atrioExtra
-  return x
+export const STAIR = {
+  EA: /** @type {StairId} */ ('S_EA'),
+  A: /** @type {StairId} */ ('S_A'),
+  B: /** @type {StairId} */ ('S_B'),
+  EB: /** @type {StairId} */ ('S_EB'),
 }
 
-/** @typedef {{ id: number, label: string, shortLabel: string, roomStart: number, roomEnd: number, plateColor: string, plateEmissive: string, matrix: (number|null)[][], atrioExtra?: number }} SchoolFloorPlan */
+export const STAIR_SHORT_LABEL = {
+  S_EA: 'Em. A',
+  S_A: 'Scala A',
+  S_B: 'Scala B',
+  S_EB: 'Em. B',
+}
+
+/** Etichetta breve su una riga (celle strette). */
+export const STAIR_TINY = {
+  S_EA: 'Em.A',
+  S_A: 'Sc.A',
+  S_B: 'Sc.B',
+  S_EB: 'Em.B',
+}
+
+const COLS = 18
+
+/**
+ * @param {number} start primo numero aula del piano (1, 41, 81)
+ * @param {number} count 40 o 39
+ * @returns {(number|null|StairId)[][]}
+ */
+function buildAllieviMatrix(start, count) {
+  const n = (i) => start + i - 1
+
+  const row0 = /** @type {(number|null|StairId)[]} */ ([
+    n(1),
+    n(2),
+    STAIR.EA,
+    n(3),
+    n(4),
+    STAIR.A,
+    n(5),
+    n(6),
+    STAIR.B,
+    n(7),
+    n(8),
+    STAIR.EB,
+    n(9),
+    n(10),
+    n(11),
+    n(12),
+    n(13),
+    n(14),
+  ])
+
+  const row1 = /** @type {(number|null|StairId)[]} */ ([
+    n(15),
+    n(16),
+    null,
+    n(17),
+    n(18),
+    null,
+    n(19),
+    n(20),
+    null,
+    n(21),
+    n(22),
+    null,
+    n(23),
+    n(24),
+    n(25),
+    n(26),
+    n(27),
+    n(28),
+  ])
+
+  const row2 = Array(COLS).fill(null)
+
+  const row3 = /** @type {(number|null|StairId)[]} */ (Array(COLS).fill(null))
+  const bottomCount = count - 28
+  const pad = Math.floor((COLS - bottomCount) / 2)
+  for (let i = 0; i < bottomCount; i++) {
+    row3[pad + i] = n(29 + i)
+  }
+
+  return [row0, row1, row2, row3]
+}
+
+/** @typedef {{ id: number, label: string, shortLabel: string, roomStart: number, roomEnd: number, plateColor: string, plateEmissive: string, matrix: (number|null|StairId)[][], corridorRow: number, buildingNote?: string }} SchoolFloorPlan */
 
 /** @type {SchoolFloorPlan[]} */
 export const SCHOOL_FLOORS = [
@@ -23,13 +106,9 @@ export const SCHOOL_FLOORS = [
     roomEnd: 40,
     plateColor: '#143d36',
     plateEmissive: '#062822',
-    atrioExtra: 0.42,
-    matrix: [
-      [1, 2, 3, 4, 5, null, 6, 7, 8, 9, 10],
-      [11, 12, 13, 14, 15, null, 16, 17, 18, 19, 20],
-      [21, 22, 23, 24, 25, null, 26, 27, 28, 29, 30],
-      [31, 32, 33, 34, 35, null, 36, 37, 38, 39, 40],
-    ],
+    corridorRow: 2,
+    buildingNote: 'ITT Allievi – Sangallo (schema planimetrico)',
+    matrix: buildAllieviMatrix(1, 40),
   },
   {
     id: 1,
@@ -39,13 +118,9 @@ export const SCHOOL_FLOORS = [
     roomEnd: 80,
     plateColor: '#1e2450',
     plateEmissive: '#0a0e28',
-    atrioExtra: 0.42,
-    matrix: [
-      [41, 42, 43, 44, 45, null, 46, 47, 48, 49, 50],
-      [51, 52, 53, 54, 55, null, 56, 57, 58, 59, 60],
-      [61, 62, 63, 64, 65, null, 66, 67, 68, 69, 70],
-      [71, 72, 73, 74, 75, null, 76, 77, 78, 79, 80],
-    ],
+    corridorRow: 2,
+    buildingNote: 'ITT Allievi – Sangallo (schema planimetrico)',
+    matrix: buildAllieviMatrix(41, 40),
   },
   {
     id: 2,
@@ -55,19 +130,18 @@ export const SCHOOL_FLOORS = [
     roomEnd: 119,
     plateColor: '#4a3018',
     plateEmissive: '#1a0f08',
-    atrioExtra: 0.42,
-    matrix: [
-      [81, 82, 83, 84, 85, null, 86, 87, 88, 89, 90],
-      [91, 92, 93, 94, 95, null, 96, 97, 98, 99, 100],
-      [101, 102, 103, 104, 105, null, 106, 107, 108, 109, 110],
-      [111, 112, 113, 114, 115, null, 116, 117, 118, 119, null],
-    ],
+    corridorRow: 2,
+    buildingNote: 'ITT Allievi – Sangallo (schema planimetrico)',
+    matrix: buildAllieviMatrix(81, 39),
   },
 ]
 
+function isStairId(v) {
+  return v === STAIR.EA || v === STAIR.A || v === STAIR.B || v === STAIR.EB
+}
+
 /**
- * Griglia per rendering 2D/3D: celle stanza + vuoti.
- * @returns {{ items: { number: number, col: number, row: number }[], cells: { col: number, row: number, kind: 'room'|'void', number?: number }[], cols: number, rows: number, usedCols: number, count: number, config: SchoolFloorPlan | null, atrioCol: number }}
+ * @returns {{ items: { number: number, col: number, row: number }[], cells: { col: number, row: number, kind: 'room'|'void'|'stair', number?: number, stairId?: StairId }[], cols: number, rows: number, usedCols: number, count: number, config: SchoolFloorPlan | null, corridorRow: number | null }}
  */
 export function getSchoolFloorGrid(floorIndex) {
   const config = SCHOOL_FLOORS[floorIndex]
@@ -80,22 +154,26 @@ export function getSchoolFloorGrid(floorIndex) {
       usedCols: 0,
       count: 0,
       config: null,
-      atrioCol: ATRIO_COL,
+      corridorRow: null,
     }
   }
   const matrix = config.matrix
   const rows = matrix.length
   const cols = matrix[0]?.length ?? 0
+  const corridorRow = config.corridorRow ?? null
   const items = []
   const cells = []
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const v = matrix[row][col]
       if (v == null) {
+        if (row === corridorRow) continue
         cells.push({ col, row, kind: 'void' })
-      } else {
+      } else if (typeof v === 'number') {
         items.push({ number: v, col, row })
         cells.push({ col, row, kind: 'room', number: v })
+      } else if (isStairId(v)) {
+        cells.push({ col, row, kind: 'stair', stairId: v })
       }
     }
   }
@@ -107,22 +185,21 @@ export function getSchoolFloorGrid(floorIndex) {
     usedCols: cols,
     count: items.length,
     config,
-    atrioCol: ATRIO_COL,
+    corridorRow,
   }
 }
 
-/** Layout Three.js: stessa geometria della planimetria (atrio allarga distanza tra ali). */
-export function getSchoolFloorLayout3d(floorIndex, roomSpacing = 1.12) {
+/** Layout Three.js: griglia uniforme (stessa forma della planimetria 2D). */
+export function getSchoolFloorLayout3d(floorIndex, roomSpacing = 1.05) {
   const { items, cols, rows, config } = getSchoolFloorGrid(floorIndex)
-  const atrioExtra = config?.atrioExtra ?? 0.4
   const items3d = items.map(({ number, col, row }) => ({
     number,
-    position: [planColToX(col, roomSpacing, atrioExtra), 0, row * roomSpacing],
+    position: [col * roomSpacing, 0, row * roomSpacing],
   }))
-  const maxX = planColToX(cols - 1, roomSpacing, atrioExtra)
+  const maxX = (cols - 1) * roomSpacing
   const centerX = maxX / 2
   const centerZ = ((rows - 1) * roomSpacing) / 2
-  const width = maxX + roomSpacing + 2.2
-  const depth = rows * roomSpacing + 2.2
+  const width = maxX + roomSpacing + 2.4
+  const depth = rows * roomSpacing + 2.4
   return { items: items3d, centerX, centerZ, rows, width, depth, config }
 }
