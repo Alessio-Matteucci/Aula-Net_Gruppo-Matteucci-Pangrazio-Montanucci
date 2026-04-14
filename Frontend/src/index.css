@@ -394,6 +394,11 @@ code {
   stroke-width: 3;
 }
 
+.map2d-room--class-match {
+  stroke: rgba(250, 204, 21, 0.9);
+  stroke-width: 2.6;
+}
+
 .map2d-room-label {
   fill: rgba(252, 253, 255, 0.98);
   font-size: 13px;
@@ -455,6 +460,11 @@ code {
 .map2d-swatch--stair {
   background: rgba(251, 191, 36, 0.2);
   border-color: rgba(251, 191, 36, 0.55);
+}
+
+.map2d-swatch--class-match {
+  background: rgba(250, 204, 21, 0.2);
+  border-color: rgba(250, 204, 21, 0.78);
 }
 
 .grid4 {

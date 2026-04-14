@@ -61,8 +61,11 @@ export function Map2DPage() {
   const [searchParams] = useSearchParams()
   const [date, setDate] = useState(todayStr())
   const [bookings, setBookings] = useState([])
+  const [classi, setClassi] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedAula, setSelectedAula] = useState(null)
+  const [aulaQuery, setAulaQuery] = useState('')
+  const [classQuery, setClassQuery] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
   const [activeFloor, setActiveFloor] = useState(0)
   const [slideDir, setSlideDir] = useState(1)
@@ -84,11 +87,18 @@ export function Map2DPage() {
   async function load() {
     setLoading(true)
     try {
+      const classiPromise = classi.length
+        ? Promise.resolve(classi)
+        : apiFetch('/classi', { token }).then((res) => (Array.isArray(res) ? res : res?.data ?? []))
       const qs = new URLSearchParams()
       qs.set('data', date)
-      const payload = await apiFetch(`/prenotazioni?${qs.toString()}`, { token })
+      const [payload, classiList] = await Promise.all([
+        apiFetch(`/prenotazioni?${qs.toString()}`, { token }),
+        classiPromise,
+      ])
       const list = Array.isArray(payload) ? payload : payload?.data ?? []
       setBookings(list.map(normalizeBooking))
+      setClassi(classiList)
     } catch (e) {
       toast.error(e?.message || 'Errore caricamento prenotazioni')
     } finally {
@@ -117,6 +127,42 @@ export function Map2DPage() {
   )
 
   const floorSummary = SCHOOL_FLOORS[activeFloor]
+  const allRoomNumbers = useMemo(() => {
+    return SCHOOL_FLOORS.flatMap((f) => {
+      const out = []
+      for (let n = f.roomStart; n <= f.roomEnd; n++) out.push(n)
+      return out
+    })
+  }, [])
+  const normalizedAulaQuery = aulaQuery.trim()
+  const normalizedClassQuery = classQuery.trim().toLowerCase()
+  const classMatchRooms = useMemo(() => {
+    if (!normalizedClassQuery) return new Set()
+    const matches = new Set()
+    for (const booking of bookings) {
+      const room = booking.aulaNumero ?? booking.aulaId
+      if (room == null) continue
+      const names = Array.isArray(booking.classNames) ? booking.classNames : []
+      if (names.some((name) => String(name).toLowerCase().includes(normalizedClassQuery))) {
+        matches.add(String(room))
+      }
+    }
+    return matches
+  }, [bookings, normalizedClassQuery])
+
+  const classSuggestions = useMemo(() => {
+    if (!normalizedClassQuery) return []
+    const names = classi.map((c) => c?.nome ?? c?.name).filter(Boolean).map(String)
+    return names.filter((name) => name.toLowerCase().includes(normalizedClassQuery)).slice(0, 10)
+  }, [classi, normalizedClassQuery])
+
+  useEffect(() => {
+    if (!classMatchRooms.size) return
+    const first = Number(Array.from(classMatchRooms)[0])
+    if (!Number.isFinite(first)) return
+    setActiveFloor(floorIndexForRoom(first))
+  }, [classMatchRooms])
+
   const busyOnFloor = useMemo(() => {
     return grid.items.filter((it) => occupiedSet.has(String(it.number))).length
   }, [grid.items, occupiedSet])
@@ -133,6 +179,7 @@ export function Map2DPage() {
     let c = 'map2d-room'
     if (occupied) c += ' map2d-room--busy'
     else c += ' map2d-room--free'
+    if (classMatchRooms.has(String(number))) c += ' map2d-room--class-match'
     if (selected) c += ' map2d-room--selected'
     return c
   }
@@ -140,6 +187,40 @@ export function Map2DPage() {
   function onRoomActivate(number) {
     setSelectedAula(number)
     navigate(`/calendario?aula=${number}`, { replace: false })
+  }
+
+  function goToRoomFromSearch() {
+    const room = Number(normalizedAulaQuery)
+    if (!Number.isFinite(room)) return
+    const targetFloor = SCHOOL_FLOORS.findIndex((f) => room >= f.roomStart && room <= f.roomEnd)
+    if (targetFloor < 0) {
+      toast.error('Aula non trovata')
+      return
+    }
+    if (targetFloor !== activeFloor) setSlideDir(targetFloor > activeFloor ? 1 : -1)
+    setActiveFloor(targetFloor)
+    setSelectedAula(room)
+    navigate(`/calendario?aula=${room}`, { replace: false })
+  }
+
+  function goToClassFromSearch() {
+    const query = classQuery.trim().toLowerCase()
+    if (!query) return
+    const match = classi.find((c) => String(c?.nome ?? c?.name ?? '').toLowerCase() === query)
+      ?? classi.find((c) => String(c?.nome ?? c?.name ?? '').toLowerCase().includes(query))
+      ?? classi.find((c) => String(c?.id ?? c?.classe_id ?? '').toLowerCase() === query)
+
+    if (!match) {
+      toast.error('Classe non trovata')
+      return
+    }
+
+    const classId = match?.id ?? match?.classe_id
+    if (classId == null) {
+      toast.error('Classe non valida')
+      return
+    }
+    navigate(`/calendario?classe=${classId}`, { replace: false })
   }
 
   const baseY = MARGIN + TITLE_H
@@ -153,8 +234,8 @@ export function Map2DPage() {
         <div>
           <div className="pageTitle">Mappa scuola (2D)</div>
           <div className="muted">
-            Planimetria a U come il piano di sicurezza (corridoio centrale, fila aule a sud, scale A / B e scale di
-            emergenza). Colori: libera / occupata / selezionata. Clic su un’aula per il calendario.
+            Planimetria semplificata: lato alto con classi separate da due scale, corridoio centrale e lato basso con
+            tutte le aule in fila unica. Clic su un’aula per il calendario.
           </div>
         </div>
         <div className="toolbarRight">
@@ -162,6 +243,64 @@ export function Map2DPage() {
             <div className="label">Data</div>
             <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
+          <div style={{ minWidth: 220 }}>
+            <div className="label">Cerca aula (numero)</div>
+            <input
+              className="input"
+              list="aule-suggest-header"
+              placeholder="es. 53"
+              value={aulaQuery}
+              onChange={(e) => setAulaQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  goToRoomFromSearch()
+                }
+              }}
+            />
+            <datalist id="aule-suggest-header">
+              {allRoomNumbers.map((n) => (
+                <option key={`h-${n}`} value={String(n)} />
+              ))}
+            </datalist>
+          </div>
+          <button className="btn" disabled={!normalizedAulaQuery} onClick={goToRoomFromSearch}>
+            Calendario aula
+          </button>
+          {aulaQuery ? (
+            <button className="btn" onClick={() => setAulaQuery('')}>
+              Reset aula
+            </button>
+          ) : null}
+          <div style={{ minWidth: 220 }}>
+            <div className="label">Cerca classe</div>
+            <input
+              className="input"
+              list="classi-suggest-header"
+              placeholder="es. 5AIA"
+              value={classQuery}
+              onChange={(e) => setClassQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  goToClassFromSearch()
+                }
+              }}
+            />
+            <datalist id="classi-suggest-header">
+              {classSuggestions.map((name) => (
+                <option key={`h-${name}`} value={name} />
+              ))}
+            </datalist>
+          </div>
+          <button className="btn" disabled={!normalizedClassQuery} onClick={goToClassFromSearch}>
+            Calendario classe
+          </button>
+          {classQuery ? (
+            <button className="btn" onClick={() => setClassQuery('')}>
+              Reset classe
+            </button>
+          ) : null}
           <button className="btn" disabled={loading} onClick={load}>
             Aggiorna
           </button>
@@ -174,6 +313,14 @@ export function Map2DPage() {
       </header>
 
       <div className="glass map3d-floor-panel" style={{ padding: 12, marginBottom: 12 }}>
+        <div className="toolbar" style={{ marginBottom: 10 }}>
+          <div className="toolbarLeft">
+            <div className="muted" style={{ fontSize: 12 }}>
+              Ricerca rapida: classe (es. 5AIA) oppure aula (es. 53).
+            </div>
+          </div>
+          <div className="toolbarRight" />
+        </div>
         <div className="map3d-floor-tabs" role="tablist" aria-label="Selezione piano">
           {SCHOOL_FLOORS.map((f, i) => {
             const active = i === activeFloor
@@ -212,6 +359,9 @@ export function Map2DPage() {
           </span>
           <span className="map2d-legend-item muted" style={{ fontSize: 12 }}>
             <span className="map2d-swatch map2d-swatch--stair" /> Scale
+          </span>
+          <span className="map2d-legend-item muted" style={{ fontSize: 12 }}>
+            <span className="map2d-swatch map2d-swatch--class-match" /> Trovata per classe
           </span>
           <span className="muted" style={{ fontSize: 12, marginLeft: 'auto' }}>
             {busyOnFloor} occupate su {grid.count} in {floorSummary.label}
@@ -284,7 +434,7 @@ export function Map2DPage() {
             </text>
 
             <text x={cx} y={wingLabelY} textAnchor="middle" className="map2d-wing-label">
-              Nord — ali, aule e collegamenti verticali
+              Nord - classi e due collegamenti verticali
             </text>
 
             {corridorRow != null ? (
@@ -310,7 +460,7 @@ export function Map2DPage() {
                   textAnchor="middle"
                   className="map2d-corridor-label"
                 >
-                  Corridoio principale (asse orizzontale)
+                  Corridoio principale
                 </text>
               </>
             ) : null}
@@ -321,7 +471,7 @@ export function Map2DPage() {
               textAnchor="middle"
               className="map2d-wing-label map2d-wing-label--south"
             >
-              Sud — fila aule su corridoio
+              Sud - fila unica di aule
             </text>
 
             {grid.cells.map((cell) => {

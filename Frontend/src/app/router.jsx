@@ -6,7 +6,6 @@ import { DashboardPage } from '../pages/Dashboard.jsx'
 import { CalendarPage } from '../pages/Calendar.jsx'
 import { BookingsPage } from '../pages/Bookings.jsx'
 import { Map2DPage } from '../pages/Map2D.jsx'
-import { Map3DPage } from '../pages/Map3D.jsx'
 
 const BYPASS_AUTH =
   import.meta.env.DEV && String(import.meta.env.VITE_BYPASS_AUTH || '').toLowerCase() === 'true'
@@ -38,7 +37,6 @@ export const router = createBrowserRouter([
       { path: 'calendario', element: <CalendarPage /> },
       { path: 'prenotazioni', element: <BookingsPage /> },
       { path: 'mappa-scuola', element: <Map2DPage /> },
-      { path: 'mappa-3d', element: <Map3DPage /> },
     ],
   },
 ])

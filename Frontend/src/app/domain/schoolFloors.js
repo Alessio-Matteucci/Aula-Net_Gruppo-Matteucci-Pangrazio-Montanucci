@@ -1,36 +1,29 @@
 /**
- * Planimetria stilizzata sul piano di sicurezza ITT Allievi–Sangallo (Terni):
- * forma a U, corridoio orizzontale centrale, fila di aule a sud, ali e scale a nord.
- * Quattro blocchi scala: Scala em. A, Scala A, Scala B, Scala em. B.
+ * Planimetria 2D semplificata:
+ * - lato alto: aule - scala A - aule - scala B - aule
+ * - corridoio centrale continuo
+ * - lato basso: tutte le aule su una fila unica
  *
- * Numerazione aule resta quella dell’app (1–119 su tre piani).
+ * Numerazione aule invariata (1-119 su tre piani).
  */
 
-/** @typedef {'S_EA'|'S_A'|'S_B'|'S_EB'} StairId */
+/** @typedef {'S_A'|'S_B'} StairId */
 
 export const STAIR = {
-  EA: /** @type {StairId} */ ('S_EA'),
   A: /** @type {StairId} */ ('S_A'),
   B: /** @type {StairId} */ ('S_B'),
-  EB: /** @type {StairId} */ ('S_EB'),
 }
 
 export const STAIR_SHORT_LABEL = {
-  S_EA: 'Em. A',
   S_A: 'Scala A',
   S_B: 'Scala B',
-  S_EB: 'Em. B',
 }
 
 /** Etichetta breve su una riga (celle strette). */
 export const STAIR_TINY = {
-  S_EA: 'Em.A',
   S_A: 'Sc.A',
   S_B: 'Sc.B',
-  S_EB: 'Em.B',
 }
-
-const COLS = 18
 
 /**
  * @param {number} start primo numero aula del piano (1, 41, 81)
@@ -39,59 +32,33 @@ const COLS = 18
  */
 function buildAllieviMatrix(start, count) {
   const n = (i) => start + i - 1
+  const topCount = Math.floor(count / 2)
+  const bottomCount = count - topCount
 
-  const row0 = /** @type {(number|null|StairId)[]} */ ([
-    n(1),
-    n(2),
-    STAIR.EA,
-    n(3),
-    n(4),
-    STAIR.A,
-    n(5),
-    n(6),
-    STAIR.B,
-    n(7),
-    n(8),
-    STAIR.EB,
-    n(9),
-    n(10),
-    n(11),
-    n(12),
-    n(13),
-    n(14),
-  ])
+  const firstGroup = Math.ceil(topCount / 3)
+  const secondGroup = Math.floor((topCount - firstGroup) / 2)
+  const thirdGroup = topCount - firstGroup - secondGroup
 
-  const row1 = /** @type {(number|null|StairId)[]} */ ([
-    n(15),
-    n(16),
-    null,
-    n(17),
-    n(18),
-    null,
-    n(19),
-    n(20),
-    null,
-    n(21),
-    n(22),
-    null,
-    n(23),
-    n(24),
-    n(25),
-    n(26),
-    n(27),
-    n(28),
-  ])
+  const topSequence = /** @type {(number|StairId)[]} */ ([])
+  let roomCursor = 1
+  for (let i = 0; i < firstGroup; i++) topSequence.push(n(roomCursor++))
+  topSequence.push(STAIR.A)
+  for (let i = 0; i < secondGroup; i++) topSequence.push(n(roomCursor++))
+  topSequence.push(STAIR.B)
+  for (let i = 0; i < thirdGroup; i++) topSequence.push(n(roomCursor++))
 
-  const row2 = Array(COLS).fill(null)
+  const cols = Math.max(topSequence.length, bottomCount)
+  const rowTop = /** @type {(number|null|StairId)[]} */ (Array(cols).fill(null))
+  const rowMiddle = /** @type {(number|null|StairId)[]} */ (Array(cols).fill(null))
+  const rowBottom = /** @type {(number|null|StairId)[]} */ (Array(cols).fill(null))
 
-  const row3 = /** @type {(number|null|StairId)[]} */ (Array(COLS).fill(null))
-  const bottomCount = count - 28
-  const pad = Math.floor((COLS - bottomCount) / 2)
-  for (let i = 0; i < bottomCount; i++) {
-    row3[pad + i] = n(29 + i)
-  }
+  const topPad = Math.floor((cols - topSequence.length) / 2)
+  for (let i = 0; i < topSequence.length; i++) rowTop[topPad + i] = topSequence[i]
 
-  return [row0, row1, row2, row3]
+  const bottomPad = Math.floor((cols - bottomCount) / 2)
+  for (let i = 0; i < bottomCount; i++) rowBottom[bottomPad + i] = n(topCount + i + 1)
+
+  return [rowTop, rowMiddle, rowBottom]
 }
 
 /** @typedef {{ id: number, label: string, shortLabel: string, roomStart: number, roomEnd: number, plateColor: string, plateEmissive: string, matrix: (number|null|StairId)[][], corridorRow: number, buildingNote?: string }} SchoolFloorPlan */
@@ -106,8 +73,8 @@ export const SCHOOL_FLOORS = [
     roomEnd: 40,
     plateColor: '#143d36',
     plateEmissive: '#062822',
-    corridorRow: 2,
-    buildingNote: 'ITT Allievi – Sangallo (schema planimetrico)',
+    corridorRow: 1,
+    buildingNote: 'Schema semplificato con due scale',
     matrix: buildAllieviMatrix(1, 40),
   },
   {
@@ -118,8 +85,8 @@ export const SCHOOL_FLOORS = [
     roomEnd: 80,
     plateColor: '#1e2450',
     plateEmissive: '#0a0e28',
-    corridorRow: 2,
-    buildingNote: 'ITT Allievi – Sangallo (schema planimetrico)',
+    corridorRow: 1,
+    buildingNote: 'Schema semplificato con due scale',
     matrix: buildAllieviMatrix(41, 40),
   },
   {
@@ -130,14 +97,14 @@ export const SCHOOL_FLOORS = [
     roomEnd: 119,
     plateColor: '#4a3018',
     plateEmissive: '#1a0f08',
-    corridorRow: 2,
-    buildingNote: 'ITT Allievi – Sangallo (schema planimetrico)',
+    corridorRow: 1,
+    buildingNote: 'Schema semplificato con due scale',
     matrix: buildAllieviMatrix(81, 39),
   },
 ]
 
 function isStairId(v) {
-  return v === STAIR.EA || v === STAIR.A || v === STAIR.B || v === STAIR.EB
+  return v === STAIR.A || v === STAIR.B
 }
 
 /**
