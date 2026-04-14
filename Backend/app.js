@@ -9,24 +9,26 @@ import { loginGoogle } from './index.js';
 import {checkRuoli} from './index.js';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
 
 const ruoliPermessi = ['Docente', 'ATA', 'ADMIN']
+dotenv.config();
+const PORT = Number(process.env.PORT || 3000)
 
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-app.listen(3000, () => {
-    console.log('Server in ascolto sulla porta 3000');
+app.listen(PORT, () => {
+    console.log(`Server in ascolto sulla porta ${PORT}`);
 });
 
 
 //GET prenotazioni, per restituire tutte le prenotazioni (filtrabili data e ora), permessi tutti
 app.get('/prenotazioni', async (req, res) => {
     try {
-        const { data, ora } = req.query;
-
-        const prenotazioniList = await prenotazioni({ data, ora });
+        const { data, ora, start, end, aula_id, classe_id } = req.query;
+        const prenotazioniList = await prenotazioni({ data, ora, start, end, aula_id, classe_id });
 
         res.json(prenotazioniList);
     } catch (error) {

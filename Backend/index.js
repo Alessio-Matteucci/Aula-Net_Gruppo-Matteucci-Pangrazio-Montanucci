@@ -29,26 +29,76 @@ export function checkRuoli(ruoliPermessi) {
 //GET prenotazioni, per restituire tutte le prenotazioni (filtrabili data e ora), permessi tutti
 export async function prenotazioni(filters = {}) {
     try {
-        let query = 'SELECT * FROM prenotazioni';
+        let query = `
+            SELECT
+                p.*,
+                a.numero AS aula_numero,
+                u.email AS utente_email,
+                pc.classe_id AS classe_id,
+                c.nome AS classe_nome
+            FROM prenotazioni p
+            LEFT JOIN aule a ON a.id = p.aula_id
+            LEFT JOIN utenti u ON u.id = p.utente_id
+            LEFT JOIN prenotazione_classi pc ON pc.prenotazione_id = p.id
+            LEFT JOIN classi c ON c.id = pc.classe_id
+        `;
         const params = [];
-const conditions = [];
+        const conditions = [];
 
         if (filters.data) {
-            conditions.push('data = ?');
+            conditions.push('p.data = ?');
             params.push(filters.data);
         }
+        if (filters.start) {
+            conditions.push('p.data >= ?');
+            params.push(filters.start);
+        }
+        if (filters.end) {
+            conditions.push('p.data <= ?');
+            params.push(filters.end);
+        }
         if (filters.ora) {
-            conditions.push('ora_inizio <= ? AND ora_fine >= ?');
+            conditions.push('p.ora_inizio <= ? AND p.ora_fine >= ?');
             params.push(filters.ora, filters.ora);
+        }
+        if (filters.aula_id) {
+            conditions.push('p.aula_id = ?');
+            params.push(filters.aula_id);
+        }
+        if (filters.classe_id) {
+            conditions.push('pc.classe_id = ?');
+            params.push(filters.classe_id);
         }
 
         if (conditions.length > 0) {
             query += ' WHERE ' + conditions.join(' AND ');
-            query += ' ora_inizio <= ? AND ora_fine >= ?';
-            params.push(filters.ora, filters.ora);
         }
+        query += ' ORDER BY p.data ASC, p.ora_inizio ASC, p.id ASC';
+
         const [rows] = await pool.query(query, params);
-        return rows;
+
+        const byId = new Map();
+        for (const row of rows) {
+            const id = row.id;
+            if (!byId.has(id)) {
+                byId.set(id, {
+                    id: row.id,
+                    aula_id: row.aula_id,
+                    aula_numero: row.aula_numero,
+                    utente_id: row.utente_id,
+                    utente_email: row.utente_email,
+                    data: row.data,
+                    ora_inizio: row.ora_inizio,
+                    ora_fine: row.ora_fine,
+                    classi: [],
+                });
+            }
+            if (row.classe_nome) {
+                const current = byId.get(id).classi;
+                if (!current.includes(row.classe_nome)) current.push(row.classe_nome);
+            }
+        }
+        return Array.from(byId.values());
     } catch (error) {
         console.error('Error fetching prenotazioni:', error);
         throw error;
