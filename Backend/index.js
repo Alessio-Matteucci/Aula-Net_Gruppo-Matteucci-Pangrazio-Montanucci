@@ -13,12 +13,17 @@ const pool = mysql.createPool({
 
 export default pool;
 
+function normalizeRole(role) {
+    return String(role || '').trim().toLowerCase()
+}
+
 //controlla se il ruolo è tra quelli permessi in ruoliPermessi, se no da errore
 export function checkRuoli(ruoliPermessi) {
+    const allowed = new Set((ruoliPermessi || []).map(normalizeRole))
     return (req, res, next) => {
         const user = req.user;
-
-        if (user && ruoliPermessi.includes(user.ruolo)) {
+        const userRole = normalizeRole(user?.ruolo)
+        if (user && allowed.has(userRole)) {
             next();
         } else {
             res.status(403).json({ error: 'Accesso negato' });

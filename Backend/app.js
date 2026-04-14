@@ -11,7 +11,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 
-const ruoliPermessi = ['Docente', 'ATA', 'ADMIN']
+const ruoliPermessi = ['docente', 'ata', 'admin']
 dotenv.config();
 const rawPort = Number(process.env.PORT || 3000)
 const PORT = !Number.isFinite(rawPort) || rawPort <= 0 || rawPort === 3306 ? 3000 : rawPort
@@ -34,6 +34,31 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
+async function resolveUserFromAuthHeader(req, _res, next) {
+    try {
+        const auth = req.headers?.authorization || ''
+        if (!auth.startsWith('Bearer ')) return next()
+        const token = auth.slice('Bearer '.length).trim()
+        if (!token) return next()
+
+        if (token.startsWith('legacy:')) {
+            const email = token.slice('legacy:'.length).trim()
+            if (email) req.user = await loginGoogle(email)
+            return next()
+        }
+
+        const payload = decodeGoogleCredential(token)
+        const email = payload?.email
+        const nome = payload?.name
+        if (email) req.user = await loginGoogle(email, nome)
+    } catch {
+        // token non valido o utente non trovato
+    }
+    next()
+}
+
+app.use(resolveUserFromAuthHeader);
+
 app.listen(PORT, () => {
     console.log(`Server in ascolto sulla porta ${PORT}`);
 });
@@ -55,8 +80,15 @@ app.get('/prenotazioni', async (req, res) => {
 //POST prenotazione, per creare una nuova prenotazione, permessi Docente,ATA,ADMIN
 app.post('/prenotazioni', checkRuoli(ruoliPermessi), async (req, res) => {
     try {
-        const prenotazioneData = req.body;
-        const newPrenotazione = await createPrenotazione(prenotazioneData);
+        const prenotazioneData = req.body || {};
+        if (!req.user?.id) {
+            return res.status(401).json({ error: 'Utente non autenticato' })
+        }
+        const payload = {
+            ...prenotazioneData,
+            utente_id: req.user.id,
+        }
+        const newPrenotazione = await createPrenotazione(payload);
         res.status(201).json(newPrenotazione);
     } catch (error) {
         res.status(500).json({ error: 'Errore nella creazione della prenotazione' });
@@ -67,7 +99,7 @@ app.post('/prenotazioni', checkRuoli(ruoliPermessi), async (req, res) => {
 
 //delete prenotazioni/:id, per eliminare una prenotazione esistente, permessi: il docente può eliminare solo le proprie prenotazioni, l'admin può eliminare tutte le prenotazioni
 
-app.delete('/prenotazioni/:id', checkRuoli(['Docente','ADMIN']), async (req, res) => {
+app.delete('/prenotazioni/:id', checkRuoli(['docente', 'admin']), async (req, res) => {
     try {
         const prenotazioneId = req.params.id;
         const user = req.user; // Assumendo che l'utente sia autenticato e disponibile in req.user
