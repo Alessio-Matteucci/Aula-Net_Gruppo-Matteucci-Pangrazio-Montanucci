@@ -183,9 +183,20 @@ export async function getUtente(email) {
 //post /login/google, per autenticare un utente tramite Google, permessi tutti e controlla se c'è un'account con quella email, se c'è lo logga se no da errore
 export async function loginGoogle(email, nome) {
     try {
-        const [rows] = await pool.query('SELECT * FROM utenti WHERE email = ?', [email]);
+        const normalizedEmail = String(email || '').trim().toLowerCase()
+        if (!normalizedEmail) throw new Error('Email mancante')
+        const [rows] = await pool.query(
+            'SELECT * FROM utenti WHERE LOWER(TRIM(email)) = ?',
+            [normalizedEmail]
+        );
         if (rows.length > 0) {
-            return rows[0];
+            const user = rows[0]
+            return {
+                id: user.id,
+                email: user.email,
+                nome: user.nome || nome || user.email,
+                ruolo: user.ruolo,
+            };
         } else {
             throw new Error('Utente non trovato');
         }

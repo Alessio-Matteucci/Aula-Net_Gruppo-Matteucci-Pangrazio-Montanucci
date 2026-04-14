@@ -13,7 +13,22 @@ import dotenv from 'dotenv';
 
 const ruoliPermessi = ['Docente', 'ATA', 'ADMIN']
 dotenv.config();
-const PORT = Number(process.env.PORT || 3000)
+const rawPort = Number(process.env.PORT || 3000)
+const PORT = !Number.isFinite(rawPort) || rawPort <= 0 || rawPort === 3306 ? 3000 : rawPort
+
+function decodeGoogleCredential(credential) {
+    if (!credential || typeof credential !== 'string') return null
+    const parts = credential.split('.')
+    if (parts.length < 2) return null
+    try {
+        const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const padded = normalized + '='.repeat((4 - (normalized.length % 4 || 4)) % 4)
+        const payload = JSON.parse(Buffer.from(padded, 'base64').toString('utf8'))
+        return payload
+    } catch {
+        return null
+    }
+}
 
 const app = express();
 app.use(bodyParser.json());
@@ -94,16 +109,46 @@ app.get('/utente', async (req, res) => {
     }
 });
 
-//POST /login, per autenticare un utente tramite Google OAuth, permessi tutti
-app.post('/login', async (req, res) => {
+//POST /login/google, per autenticare un utente tramite Google OAuth
+app.post('/login/google', async (req, res) => {
     try {
-        const { email } = req.body;
-        const userData = await loginGoogle(email);
-        res.json(userData);
+        const { credential } = req.body ?? {};
+        const googlePayload = decodeGoogleCredential(credential)
+        const email = googlePayload?.email
+        const nome = googlePayload?.name
+
+        if (!email) {
+            return res.status(400).json({ error: 'Token Google non valido (email mancante)' })
+        }
+
+        const userData = await loginGoogle(email, nome);
+        res.json({
+            token: credential,
+            user: userData,
+        });
     } catch (error) {
-        res.status(500).json({ error: 'Errore nell\'autenticazione' });  
+        const message = error?.message || 'Errore nell\'autenticazione'
+        const status = /non trovato/i.test(message) ? 401 : 500
+        res.status(status).json({ error: message });
     }
 });
+
+// Retro-compatibilità con vecchio endpoint /login
+app.post('/login', async (req, res) => {
+    const email = req.body?.email
+    if (!email) return res.status(400).json({ error: 'Email mancante' })
+    try {
+        const userData = await loginGoogle(email, req.body?.nome)
+        res.json({
+            token: `legacy:${email}`,
+            user: userData,
+        })
+    } catch (error) {
+        const message = error?.message || 'Errore nell\'autenticazione'
+        const status = /non trovato/i.test(message) ? 401 : 500
+        res.status(status).json({ error: message })
+    }
+})
 
 
 
