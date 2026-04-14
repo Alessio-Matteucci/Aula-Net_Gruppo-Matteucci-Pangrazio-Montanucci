@@ -10,6 +10,8 @@ import {checkRuoli} from './index.js';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 
+const ruoliPermessi = ['Docente', 'ATA', 'ADMIN']
+
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
@@ -34,28 +36,21 @@ app.get('/prenotazioni', async (req, res) => {
 
 
 //POST prenotazione, per creare una nuova prenotazione, permessi Docente,ATA,ADMIN
-app.post('/prenotazioni/add',checkRuoli(['Docente', 'ADMIN']),
-    async (req, res) => {
-        try {
-            const prenotazioneData = req.body;
-            const newPrenotazione = await createPrenotazione(prenotazioneData);
-
-            res.status(201).json({
-                message: 'Prenotazione creata con successo',
-                prenotazione: newPrenotazione
-            });
-
-        } catch (error) {
-            res.status(500).json({ error: 'Errore nella creazione della prenotazione' });
-        }
+app.post('/prenotazioni', checkRuoli(ruoliPermessi), async (req, res) => {
+    try {
+        const prenotazioneData = req.body;
+        const newPrenotazione = await createPrenotazione(prenotazioneData);
+        res.status(201).json(newPrenotazione);
+    } catch (error) {
+        res.status(500).json({ error: 'Errore nella creazione della prenotazione' });
     }
-);
+});
 
 //nella post dovrai scrivere: { "aula_id": 1, "utente_id": 1, "data": "2024-06-30", "ora_inizio": "10:00:00", "ora_fine": "12:00:00" } 
 
 //delete prenotazioni/:id, per eliminare una prenotazione esistente, permessi: il docente può eliminare solo le proprie prenotazioni, l'admin può eliminare tutte le prenotazioni
 
-app.delete('/prenotazioni/:id', async (req, res) => {
+app.delete('/prenotazioni/:id', checkRuoli(['Docente','ADMIN']), async (req, res) => {
     try {
         const prenotazioneId = req.params.id;
         const user = req.user; // Assumendo che l'utente sia autenticato e disponibile in req.user
@@ -100,11 +95,13 @@ app.get('/utente', async (req, res) => {
 //POST /login, per autenticare un utente tramite Google OAuth, permessi tutti
 app.post('/login', async (req, res) => {
     try {
-        const { token } = req.body;
-        const userData = await loginGoogle(token);
+        const { email } = req.body;
+        const userData = await loginGoogle(email);
         res.json(userData);
     } catch (error) {
         res.status(500).json({ error: 'Errore nell\'autenticazione' });  
     }
 });
+
+
 

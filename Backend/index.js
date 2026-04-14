@@ -13,15 +13,16 @@ const pool = mysql.createPool({
 
 export default pool;
 
-export function checkRuoli(ruoliConsentiti) {
+//controlla se il ruolo è tra quelli permessi in ruoliPermessi, se no da errore
+export function checkRuoli(ruoliPermessi) {
     return (req, res, next) => {
-        const userRuolo = req.user?.ruolo;
+        const user = req.user;
 
-        if (!userRuolo || !ruoliConsentiti.includes(userRuolo)) {
-            return res.status(403).json({ error: 'Accesso negato' });
+        if (user && ruoliPermessi.includes(user.ruolo)) {
+            next();
+        } else {
+            res.status(403).json({ error: 'Accesso negato' });
         }
-
-        next();
     };
 }
 
@@ -30,12 +31,19 @@ export async function prenotazioni(filters = {}) {
     try {
         let query = 'SELECT * FROM prenotazioni';
         const params = [];
+const conditions = [];
+
         if (filters.data) {
-            query += ' WHERE data = ?';
+            conditions.push('data = ?');
             params.push(filters.data);
         }
         if (filters.ora) {
-            query += filters.data ? ' AND' : ' WHERE';
+            conditions.push('ora_inizio <= ? AND ora_fine >= ?');
+            params.push(filters.ora, filters.ora);
+        }
+
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
             query += ' ora_inizio <= ? AND ora_fine >= ?';
             params.push(filters.ora, filters.ora);
         }
@@ -71,8 +79,8 @@ export async function deletePrenotazione(id, user) {
         const params = [id];
 
         if (user.ruolo === 'Docente') {
-            query += ' AND email = ?';
-            params.push(user.email);
+            query += ' AND utente_id = ?';
+            params.push(user.id);
         }
 
         const [result] = await pool.query(query, params);
