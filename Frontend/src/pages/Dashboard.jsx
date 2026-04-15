@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../app/api/client.js'
 import { useAuth } from '../app/auth/AuthProvider.jsx'
 import { CalendarDays, DoorOpen, Layers, Table } from 'lucide-react'
+import { UpcomingEvents } from '../Components/UpcomingEvents.jsx'
 
 function StatCard({ title, value, icon: Icon }) {
   return (
@@ -94,17 +95,20 @@ export function DashboardPage() {
         ))}
       </div>
 
-      <div className="card glass" style={{ marginTop: 16 }}>
-        <div className="muted" style={{ marginBottom: 8 }}>
-          Suggerimenti
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+        <UpcomingEvents />
+        
+        <div className="card glass">
+          <div className="muted" style={{ marginBottom: 8 }}>
+            Suggerimenti
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--text-2)' }}>
+            <li>Usa "Calendario" per creare e gestire prenotazioni.</li>
+            <li>Usa "Prenotazioni" per filtri rapidi per aula/classe.</li>
+            <li>Usa "Mappa scuola" per una vista immediata della disponibilità.</li>
+          </ul>
         </div>
-        <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--text-2)' }}>
-          <li>Usa “Calendario” per creare e gestire prenotazioni.</li>
-          <li>Usa “Prenotazioni” per filtri rapidi per aula/classe.</li>
-          <li>Usa “Mappa scuola” per una vista immediata della disponibilità.</li>
-        </ul>
       </div>
     </div>
   )
 }
-
