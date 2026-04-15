@@ -13,7 +13,7 @@ const pool = mysql.createPool({
 
 export default pool;
 
-function normalizeRole(role) {
+export function normalizeRole(role) {
     return String(role || '').trim().toLowerCase()
 }
 
@@ -31,14 +31,22 @@ export function checkRuoli(ruoliPermessi) {
     };
 }
 
-//GET prenotazioni, per restituire tutte le prenotazioni (filtrabili data e ora), permessi tutti
+//GET prenotazioni, per restituire le prenotazioni con controllo accessi
 export async function prenotazioni(filters = {}) {
     try {
         let query = `
             SELECT
-                p.*,
+                p.id,
+                p.aula_id,
+                p.utente_id,
+                DATE_FORMAT(p.data, '%Y-%m-%d') AS data,
+                p.ora_inizio,
+                p.ora_fine,
+                p.created_at,
                 a.numero AS aula_numero,
                 u.email AS utente_email,
+                u.nome AS utente_nome,
+                u.cogome AS utente_cognome,
                 pc.classe_id AS classe_id,
                 c.nome AS classe_nome
             FROM prenotazioni p
@@ -73,6 +81,10 @@ export async function prenotazioni(filters = {}) {
         if (filters.classe_id) {
             conditions.push('pc.classe_id = ?');
             params.push(filters.classe_id);
+        }
+        if (filters.utente_id) {
+            conditions.push('p.utente_id = ?');
+            params.push(filters.utente_id);
         }
 
         if (conditions.length > 0) {
@@ -112,16 +124,40 @@ export async function prenotazioni(filters = {}) {
 
 //POST prenotazione, per creare una nuova prenotazione, permessi Docente,ATA,ADMIN. La prenotazione va sull'aula e ci va: id, aula_id, utente_id, data, ora_inizio, ora_fine, created_at. 
 export async function createPrenotazione(prenotazioneData) {
+    const connection = await pool.getConnection();
     try {
-        const { aula_id, utente_id, data, ora_inizio, ora_fine } = prenotazioneData;
-        const [result] = await pool.query(
+        await connection.beginTransaction();
+        
+        const { aula_id, utente_id, data, ora_inizio, ora_fine, classi } = prenotazioneData;
+        
+        // Assicura che la data sia in formato YYYY-MM-DD senza timezone
+        const cleanDate = data ? data.split('T')[0] : data;
+        
+        // Inserisci la prenotazione principale
+        const [result] = await connection.query(
             'INSERT INTO prenotazioni (aula_id, utente_id, data, ora_inizio, ora_fine, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-            [aula_id, utente_id, data, ora_inizio, ora_fine]
+            [aula_id, utente_id, cleanDate, ora_inizio, ora_fine]
         );
-        return { id: result.insertId, ...prenotazioneData };
+        
+        const prenotazioneId = result.insertId;
+        
+        // Se ci sono classi selezionate, inserisci i record nella tabella prenotazione_classi
+        if (classi && Array.isArray(classi) && classi.length > 0) {
+            const classiValues = classi.map(classeId => [prenotazioneId, classeId]);
+            await connection.query(
+                'INSERT INTO prenotazione_classi (prenotazione_id, classe_id) VALUES ?',
+                [classiValues]
+            );
+        }
+        
+        await connection.commit();
+        return { id: prenotazioneId, ...prenotazioneData };
     } catch (error) {
+        await connection.rollback();
         console.error('Error creating prenotazione:', error);
         throw error;
+    } finally {
+        connection.release();
     }
 };
 

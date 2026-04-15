@@ -11,7 +11,15 @@ export function normalizeBooking(raw) {
   const aulaNumero = raw?.aula_numero ?? raw?.aulaNumero ?? raw?.aula?.numero ?? raw?.aula?.number ?? null
   const userId = raw?.utente_id ?? raw?.userId ?? raw?.utente?.id ?? raw?.user?.id ?? null
   const userEmail = raw?.utente_email ?? raw?.userEmail ?? raw?.utente?.email ?? raw?.user?.email ?? null
-  const date = raw?.data ?? raw?.date ?? null
+  const userName = raw?.utente_nome ?? raw?.userName ?? raw?.utente?.nome ?? raw?.user?.nome ?? null
+  const userCognome = raw?.utente_cognome ?? raw?.userCognome ?? raw?.utente?.cogome ?? raw?.user?.cognome ?? null
+  
+  // Gestisce il formato della data dal backend (ISO string) e lo converte in YYYY-MM-DD
+  let date = raw?.data ?? raw?.date ?? null
+  if (date && typeof date === 'string' && date.includes('T')) {
+    date = date.split('T')[0]
+  }
+  
   const startTime = raw?.ora_inizio ?? raw?.start ?? raw?.oraInizio ?? null
   const endTime = raw?.ora_fine ?? raw?.end ?? raw?.oraFine ?? null
   const classi = raw?.classi ?? raw?.classes ?? raw?.prenotazione_classi ?? []
@@ -19,12 +27,18 @@ export function normalizeBooking(raw) {
     ? classi.map((c) => c?.nome ?? c?.name ?? c).filter(Boolean)
     : []
 
+  // Costruisci il nome completo del docente
+  const userFullName = (userName && userCognome) 
+    ? `${userName} ${userCognome}` 
+    : userName || userCognome || userEmail || 'Sconosciuto'
+
   return {
     id,
     aulaId,
     aulaNumero,
     userId,
     userEmail,
+    userName: userFullName,
     date,
     startTime,
     endTime,

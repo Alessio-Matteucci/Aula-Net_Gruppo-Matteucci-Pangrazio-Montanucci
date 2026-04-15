@@ -201,6 +201,10 @@ export function CalendarPage() {
           nowIndicator
           selectable={canCreate}
           selectMirror
+          slotEventOverlap={false}
+          displayEventEnd={true}
+          eventMaxStack={3}
+          dayMaxEventRows={true}
           eventClick={(info) => {
             const booking = info?.event?.extendedProps?.booking
             if (!booking) return
@@ -255,23 +259,27 @@ export function CalendarPage() {
           <div className="formGrid">
             <div>
               <div className="label">Aula</div>
-              <div>Aula {selected.booking.aulaNumero ?? selected.booking.aulaId ?? '—'}</div>
+              <div>Aula {selected.booking.aulaNumero ?? selected.booking.aulaId ?? '---'}</div>
+            </div>
+            <div>
+              <div className="label">Docente</div>
+              <div>{selected.booking.userName ?? '---'}</div>
             </div>
             <div>
               <div className="label">Data</div>
-              <div>{selected.booking.date ?? '—'}</div>
+              <div>{selected.booking.date ?? '---'}</div>
             </div>
             <div>
               <div className="label">Ora inizio</div>
-              <div>{selected.booking.startTime ?? '—'}</div>
+              <div>{selected.booking.startTime ?? '---'}</div>
             </div>
             <div>
               <div className="label">Ora fine</div>
-              <div>{selected.booking.endTime ?? '—'}</div>
+              <div>{selected.booking.endTime ?? '---'}</div>
             </div>
             <div className="full">
               <div className="label">Classi</div>
-              <div>{selected.booking.classNames?.length ? selected.booking.classNames.join(', ') : '—'}</div>
+              <div>{selected.booking.classNames?.length ? selected.booking.classNames.join(', ') : '---'}</div>
             </div>
           </div>
         ) : null}

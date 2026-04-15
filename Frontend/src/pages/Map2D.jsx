@@ -92,6 +92,7 @@ export function Map2DPage() {
         : apiFetch('/classi', { token }).then((res) => (Array.isArray(res) ? res : res?.data ?? []))
       const qs = new URLSearchParams()
       qs.set('data', date)
+      qs.set('all_bookings', 'true') // Permette ai docenti di vedere tutte le prenotazioni
       const [payload, classiList] = await Promise.all([
         apiFetch(`/prenotazioni?${qs.toString()}`, { token }),
         classiPromise,
@@ -113,9 +114,19 @@ export function Map2DPage() {
 
   const occupiedSet = useMemo(() => {
     const set = new Set()
+    const now = new Date()
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`
+    
     for (const b of bookings) {
       const n = b.aulaNumero ?? b.aulaId
-      if (n != null) set.add(String(n))
+      if (n == null) continue
+      
+      // Controlla se la prenotazione copre l'orario corrente
+      if (b.startTime && b.endTime) {
+        if (currentTime >= b.startTime && currentTime <= b.endTime) {
+          set.add(String(n))
+        }
+      }
     }
     return set
   }, [bookings])
@@ -239,76 +250,97 @@ export function Map2DPage() {
           </div>
         </div>
         <div className="toolbarRight">
-          <div style={{ minWidth: 180 }}>
+          {/* Gruppo Data */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div className="label">Data</div>
-            <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </div>
-          <div style={{ minWidth: 220 }}>
-            <div className="label">Cerca aula (numero)</div>
-            <input
-              className="input"
-              list="aule-suggest-header"
-              placeholder="es. 53"
-              value={aulaQuery}
-              onChange={(e) => setAulaQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  goToRoomFromSearch()
-                }
-              }}
+            <input 
+              className="input" 
+              type="date" 
+              value={date} 
+              onChange={(e) => setDate(e.target.value)} 
+              style={{ width: 160 }}
             />
+          </div>
+
+          {/* Gruppo Ricerca Aula */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div className="label">Cerca aula</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                className="input"
+                list="aule-suggest-header"
+                placeholder="es. 53"
+                value={aulaQuery}
+                onChange={(e) => setAulaQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    goToRoomFromSearch()
+                  }
+                }}
+                style={{ width: 120 }}
+              />
+              <button className="btn" disabled={!normalizedAulaQuery} onClick={goToRoomFromSearch}>
+                Vai
+              </button>
+              {aulaQuery && (
+                <button className="btn" onClick={() => setAulaQuery('')} title="Reset aula">
+                  ×
+                </button>
+              )}
+            </div>
             <datalist id="aule-suggest-header">
               {allRoomNumbers.map((n) => (
                 <option key={`h-${n}`} value={String(n)} />
               ))}
             </datalist>
           </div>
-          <button className="btn" disabled={!normalizedAulaQuery} onClick={goToRoomFromSearch}>
-            Calendario aula
-          </button>
-          {aulaQuery ? (
-            <button className="btn" onClick={() => setAulaQuery('')}>
-              Reset aula
-            </button>
-          ) : null}
-          <div style={{ minWidth: 220 }}>
+
+          {/* Gruppo Ricerca Classe */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div className="label">Cerca classe</div>
-            <input
-              className="input"
-              list="classi-suggest-header"
-              placeholder="es. 5AIA"
-              value={classQuery}
-              onChange={(e) => setClassQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault()
-                  goToClassFromSearch()
-                }
-              }}
-            />
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                className="input"
+                list="classi-suggest-header"
+                placeholder="es. 5AIA"
+                value={classQuery}
+                onChange={(e) => setClassQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    goToClassFromSearch()
+                  }
+                }}
+                style={{ width: 120 }}
+              />
+              <button className="btn" disabled={!normalizedClassQuery} onClick={goToClassFromSearch}>
+                Vai
+              </button>
+              {classQuery && (
+                <button className="btn" onClick={() => setClassQuery('')} title="Reset classe">
+                  ×
+                </button>
+              )}
+            </div>
             <datalist id="classi-suggest-header">
               {classSuggestions.map((name) => (
                 <option key={`h-${name}`} value={name} />
               ))}
             </datalist>
           </div>
-          <button className="btn" disabled={!normalizedClassQuery} onClick={goToClassFromSearch}>
-            Calendario classe
-          </button>
-          {classQuery ? (
-            <button className="btn" onClick={() => setClassQuery('')}>
-              Reset classe
+
+          {/* Gruppo Azioni */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
+            <button className="btn" disabled={loading} onClick={load}>
+              Aggiorna
             </button>
-          ) : null}
-          <button className="btn" disabled={loading} onClick={load}>
-            Aggiorna
-          </button>
-          {canCreate && selectedAula ? (
-            <button className="btn btn-primary" onClick={() => setCreateOpen(true)}>
-              Prenota Aula {selectedAula}
-            </button>
-          ) : null}
+            {canCreate && selectedAula ? (
+              <button className="btn btn-primary" onClick={() => setCreateOpen(true)}>
+                Prenota {selectedAula}
+              </button>
+            ) : null}
+          </div>
         </div>
       </header>
 

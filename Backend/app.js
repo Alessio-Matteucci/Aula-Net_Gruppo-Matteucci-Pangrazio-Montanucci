@@ -7,6 +7,7 @@ import { classi } from './index.js';
 import { getUtente } from './index.js';
 import { loginGoogle } from './index.js';
 import {checkRuoli} from './index.js';
+import { normalizeRole } from './index.js';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
@@ -64,11 +65,33 @@ app.listen(PORT, () => {
 });
 
 
-//GET prenotazioni, per restituire tutte le prenotazioni (filtrabili data e ora), permessi tutti
+//GET prenotazioni, per restituire le prenotazioni con controllo accessi
 app.get('/prenotazioni', async (req, res) => {
     try {
-        const { data, ora, start, end, aula_id, classe_id } = req.query;
-        const prenotazioniList = await prenotazioni({ data, ora, start, end, aula_id, classe_id });
+        const { data, ora, start, end, aula_id, classe_id, all_bookings } = req.query;
+        
+        // Controllo accessi: 
+        // - admin vede sempre tutte
+        // - docente/ata vedono tutte solo se all_bookings=true (per mappa 2D)
+        // - docente/ata vedono prenotazioni di un'aula specifica se aula_id è specificato
+        // - altrimenti vedono solo le proprie
+        let utente_id = null;
+        const userRole = normalizeRole(req.user?.ruolo);
+        
+        if (userRole !== 'admin') {
+            if (!req.user?.id) {
+                return res.status(401).json({ error: 'Utente non autenticato' });
+            }
+            
+            // Permetti di vedere tutte le prenotazioni solo se:
+            // 1. all_bookings=true (per mappa 2D)
+            // 2. aula_id è specificato (per calendario di un'aula specifica)
+            if (all_bookings !== 'true' && !aula_id) {
+                utente_id = req.user.id;
+            }
+        }
+        
+        const prenotazioniList = await prenotazioni({ data, ora, start, end, aula_id, classe_id, utente_id });
 
         res.json(prenotazioniList);
     } catch (error) {
