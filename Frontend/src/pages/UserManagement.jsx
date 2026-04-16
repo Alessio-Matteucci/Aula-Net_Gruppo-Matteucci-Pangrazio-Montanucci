@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../app/auth/AuthProvider.jsx'
 import { apiFetch } from '../app/api/client.js'
 import toast from 'react-hot-toast'
+import PacManGame from '../Components/PacManGame.jsx'
 
 export default function UserManagement() {
   const { user, token } = useAuth()
@@ -12,6 +13,7 @@ export default function UserManagement() {
   const [editingUser, setEditingUser] = useState(null)
   const [creatingUser, setCreatingUser] = useState(false)
   const [formErrors, setFormErrors] = useState({})
+  const [showPacMan, setShowPacMan] = useState(false)
   const [formData, setFormData] = useState({
     nome: '',
     cognome: '',
@@ -253,6 +255,14 @@ export default function UserManagement() {
             </button>
             <button className="btn" onClick={loadUtenti} disabled={loading}>
               Aggiorna
+            </button>
+            <button 
+              className="btn" 
+              onClick={() => setShowPacMan(true)}
+              style={{ backgroundColor: '#FFD700', color: '#000', fontWeight: 'bold' }}
+              title="Gioca a Pac-Man!"
+            >
+              🎮 Pac-Man
             </button>
           </div>
         </div>
@@ -502,6 +512,49 @@ export default function UserManagement() {
           </div>
         )}
       </div>
+
+      {/* Modal Pac-Man */}
+      {showPacMan && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            position: 'relative',
+            backgroundColor: '#1a1a2e',
+            borderRadius: 12,
+            padding: 20,
+            maxWidth: '90%',
+            maxHeight: '90%',
+            overflow: 'auto'
+          }}>
+            <button 
+              onClick={() => setShowPacMan(false)}
+              style={{
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                background: 'none',
+                border: 'none',
+                fontSize: 24,
+                cursor: 'pointer',
+                color: '#fff'
+              }}
+            >
+              ×
+            </button>
+            <PacManGame />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
