@@ -4,7 +4,7 @@ import {createPrenotazione} from './index.js';
 import {deletePrenotazione} from './index.js'; 
 import { aule } from './index.js';
 import { classi } from './index.js';
-import { getUtente, getAllUtenti, updateUtente, deleteUtente } from './index.js';
+import { getUtente, getAllUtenti, updateUtente, deleteUtente, createUtente } from './index.js';
 import { loginGoogle } from './index.js';
 import {checkRuoli} from './index.js';
 import { normalizeRole } from './index.js';
@@ -12,6 +12,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 
+const ruoliPermessiPrenotazioni = ['docente', 'admin']
 const ruoliPermessi = ['docente', 'ata', 'admin']
 dotenv.config();
 const rawPort = Number(process.env.PORT || 3000)
@@ -72,8 +73,8 @@ app.get('/prenotazioni', async (req, res) => {
         
         // Controllo accessi: 
         // - admin vede sempre tutte
-        // - docente/ata vedono tutte solo se all_bookings=true (per mappa 2D)
-        // - docente/ata vedono prenotazioni di un'aula specifica se aula_id è specificato
+        // - ata vede sempre tutte (può vedere ma non può prenotare)
+        // - docente vede tutte solo se all_bookings=true (per mappa 2D) o aula_id specificato
         // - studente vede prenotazioni della sua classe o le proprie
         // - altrimenti vedono solo le proprie
         let utente_id = null;
@@ -93,14 +94,15 @@ app.get('/prenotazioni', async (req, res) => {
                     // Se lo studente non ha una classe assegnata, vede solo le proprie prenotazioni
                     utente_id = req.user.id;
                 }
-            } else {
-                // Docenti/ATA vedono tutte solo se:
+            } else if (userRole === 'docente') {
+                // Docenti vedono tutte solo se:
                 // 1. all_bookings=true (per mappa 2D)
                 // 2. aula_id è specificato (per calendario di un'aula specifica)
                 if (all_bookings !== 'true' && !aula_id) {
                     utente_id = req.user.id;
                 }
             }
+            // ATA vedono sempre tutte le prenotazioni (nessun filtro)
         }
         
         const prenotazioniList = await prenotazioni({ data, ora, start, end, aula_id, classe_id, utente_id, student_classe_id });
@@ -112,8 +114,8 @@ app.get('/prenotazioni', async (req, res) => {
 });
 
 
-//POST prenotazione, per creare una nuova prenotazione, permessi Docente,ATA,ADMIN
-app.post('/prenotazioni', checkRuoli(ruoliPermessi), async (req, res) => {
+//POST prenotazione, per creare una nuova prenotazione, permessi Docente,ADMIN
+app.post('/prenotazioni', checkRuoli(ruoliPermessiPrenotazioni), async (req, res) => {
     try {
         const prenotazioneData = req.body || {};
         if (!req.user?.id) {
@@ -126,8 +128,11 @@ app.post('/prenotazioni', checkRuoli(ruoliPermessi), async (req, res) => {
         const newPrenotazione = await createPrenotazione(payload);
         res.status(201).json(newPrenotazione);
     } catch (error) {
+        console.log('Errore nella creazione prenotazione:', error.message);
+        console.log('Error code:', error.code);
+        
         // Verifica se è un errore di duplicato (prenotazione già esistente)
-        if (error.code === 'ER_DUP_ENTRY' || error.message?.includes('Duplicate entry')) {
+        if (error.code === 'ER_DUP_ENTRY' || error.message?.includes('Duplicate entry') || error.message?.includes('già una prenotazione')) {
             res.status(409).json({ error: 'C\'è già una prenotazione per questa aula in questo orario' });
         } else {
             res.status(500).json({ error: 'Errore nella creazione della prenotazione' });
@@ -139,7 +144,7 @@ app.post('/prenotazioni', checkRuoli(ruoliPermessi), async (req, res) => {
 
 //delete prenotazioni/:id, per eliminare una prenotazione esistente, permessi: il docente può eliminare solo le proprie prenotazioni, l'admin può eliminare tutte le prenotazioni
 
-app.delete('/prenotazioni/:id', checkRuoli(['docente', 'admin']), async (req, res) => {
+app.delete('/prenotazioni/:id', checkRuoli(ruoliPermessiPrenotazioni), async (req, res) => {
     try {
         const prenotazioneId = req.params.id;
         const user = req.user; // Assumendo che l'utente sia autenticato e disponibile in req.user
@@ -197,6 +202,22 @@ app.delete('/utenti/:id', checkRuoli(['admin']), async (req, res) => {
             res.status(404).json({ error: error.message });
         } else {
             res.status(500).json({ error: 'Errore nell\'eliminazione dell\'utente' });
+        }
+    }
+});
+
+//POST creazione utente (solo admin)
+app.post('/utenti', checkRuoli(['admin']), async (req, res) => {
+    try {
+        const userData = req.body || {};
+        
+        const newUser = await createUtente(userData);
+        res.status(201).json(newUser);
+    } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            res.status(409).json({ error: 'Email già in uso' });
+        } else {
+            res.status(500).json({ error: 'Errore nella creazione dell\'utente' });
         }
     }
 });

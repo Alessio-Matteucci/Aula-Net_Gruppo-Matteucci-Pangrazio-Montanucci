@@ -10,6 +10,8 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [editingUser, setEditingUser] = useState(null)
+  const [creatingUser, setCreatingUser] = useState(false)
+  const [formErrors, setFormErrors] = useState({})
   const [formData, setFormData] = useState({
     nome: '',
     cognome: '',
@@ -65,6 +67,8 @@ export default function UserManagement() {
 
   function cancelEdit() {
     setEditingUser(null)
+    setCreatingUser(false)
+    setFormErrors({})
     setFormData({
       nome: '',
       cognome: '',
@@ -74,10 +78,60 @@ export default function UserManagement() {
     })
   }
 
+  function startCreate() {
+    setEditingUser(null)
+    setCreatingUser(true)
+    setFormErrors({})
+    setFormData({
+      nome: '',
+      cognome: '',
+      email: '',
+      ruolo: 'studente',
+      classe_id: ''
+    })
+  }
+
+  async function handleCreate(e) {
+    e.preventDefault()
+    
+    const errors = validateForm(formData)
+    setFormErrors(errors)
+    
+    if (Object.keys(errors).length > 0) {
+      return
+    }
+    
+    try {
+      const payload = { ...formData }
+      if (payload.ruolo !== 'studente') {
+        payload.classe_id = null
+      }
+
+      await apiFetch('/utenti', {
+        method: 'POST',
+        token,
+        json: payload
+      })
+
+      toast.success('Utente creato con successo')
+      cancelEdit()
+      loadUtenti()
+    } catch (error) {
+      toast.error(error.message || 'Errore nella creazione')
+    }
+  }
+
   async function handleSave(e) {
     e.preventDefault()
     
     if (!editingUser) return
+
+    const errors = validateForm(formData)
+    setFormErrors(errors)
+    
+    if (Object.keys(errors).length > 0) {
+      return
+    }
 
     try {
       const payload = { ...formData }
@@ -111,6 +165,38 @@ export default function UserManagement() {
     } catch (error) {
       toast.error(error.message || 'Errore nell\'eliminazione')
     }
+  }
+
+  function validateForm(data) {
+    const errors = {}
+    
+    // Validazione nome: solo lettere, spazi, non vuoto
+    if (!data.nome || data.nome.trim() === '') {
+      errors.nome = 'Il nome è obbligatorio'
+    } else if (!/^[a-zA-Z\sÀ-ÿ]+$/.test(data.nome.trim())) {
+      errors.nome = 'Il nome può contenere solo lettere'
+    }
+    
+    // Validazione cognome: solo lettere, spazi, non vuoto
+    if (!data.cognome || data.cognome.trim() === '') {
+      errors.cognome = 'Il cognome è obbligatorio'
+    } else if (!/^[a-zA-Z\sÀ-ÿ]+$/.test(data.cognome.trim())) {
+      errors.cognome = 'Il cognome può contenere solo lettere'
+    }
+    
+    // Validazione email
+    if (!data.email || data.email.trim() === '') {
+      errors.email = 'L\'email è obbligatoria'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+      errors.email = 'Email non valida'
+    }
+    
+    // Validazione classe per studenti
+    if (data.ruolo === 'studente' && (!data.classe_id || data.classe_id === '')) {
+      errors.classe_id = 'La classe è obbligatoria per gli studenti'
+    }
+    
+    return errors
   }
 
   function getRuoloColor(ruolo) {
@@ -161,10 +247,111 @@ export default function UserManagement() {
       <div className="glass" style={{ padding: 20 }}>
         <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ margin: 0 }}>Utenti Registrati ({utenti.length})</h3>
-          <button className="btn" onClick={loadUtenti} disabled={loading}>
-            Aggiorna
-          </button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button className="btn btn-primary" onClick={startCreate} disabled={loading || creatingUser}>
+              Crea Nuovo Utente
+            </button>
+            <button className="btn" onClick={loadUtenti} disabled={loading}>
+              Aggiorna
+            </button>
+          </div>
         </div>
+
+        {creatingUser && (
+          <div className="glass" style={{ padding: 20, marginBottom: 20, border: '2px solid #10b981' }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#10b981' }}>Crea Nuovo Utente</h4>
+            <form onSubmit={handleCreate}>
+              <div className="formGrid">
+                <div>
+                  <div className="label">Nome</div>
+                  <input
+                    className={`input ${formErrors.nome ? 'error' : ''}`}
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    required
+                  />
+                  {formErrors.nome && (
+                    <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                      {formErrors.nome}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="label">Cognome</div>
+                  <input
+                    className={`input ${formErrors.cognome ? 'error' : ''}`}
+                    value={formData.cognome}
+                    onChange={(e) => setFormData({ ...formData, cognome: e.target.value })}
+                    required
+                  />
+                  {formErrors.cognome && (
+                    <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                      {formErrors.cognome}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="label">Email</div>
+                  <input
+                    className={`input ${formErrors.email ? 'error' : ''}`}
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                  />
+                  {formErrors.email && (
+                    <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                      {formErrors.email}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="label">Ruolo</div>
+                  <select
+                    className="input"
+                    value={formData.ruolo}
+                    onChange={(e) => setFormData({ ...formData, ruolo: e.target.value, classe_id: '' })}
+                  >
+                    <option value="studente">Studente</option>
+                    <option value="docente">Docente</option>
+                    <option value="ata">ATA</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                {formData.ruolo === 'studente' && (
+                  <div>
+                    <div className="label">Classe *</div>
+                    <select
+                      className={`input ${formErrors.classe_id ? 'error' : ''}`}
+                      value={formData.classe_id}
+                      onChange={(e) => setFormData({ ...formData, classe_id: e.target.value })}
+                    >
+                      <option value="">Seleziona classe</option>
+                      {classi.map((classe) => (
+                        <option key={classe.id} value={classe.id}>
+                          {classe.nome}
+                        </option>
+                      ))}
+                    </select>
+                    {formErrors.classe_id && (
+                      <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                        {formErrors.classe_id}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div style={{ marginTop: 15, display: 'flex', gap: 10 }}>
+                <button type="submit" className="btn btn-primary">
+                  Crea Utente
+                </button>
+                <button type="button" className="btn" onClick={cancelEdit}>
+                  Annulla
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {editingUser && (
           <div className="glass" style={{ padding: 20, marginBottom: 20, border: '2px solid #3b82f6' }}>
@@ -214,19 +401,24 @@ export default function UserManagement() {
                 </div>
                 {formData.ruolo === 'studente' && (
                   <div>
-                    <div className="label">Classe</div>
+                    <div className="label">Classe *</div>
                     <select
-                      className="input"
+                      className={`input ${formErrors.classe_id ? 'error' : ''}`}
                       value={formData.classe_id}
                       onChange={(e) => setFormData({ ...formData, classe_id: e.target.value })}
                     >
-                      <option value="">Nessuna classe</option>
+                      <option value="">Seleziona classe</option>
                       {classi.map((classe) => (
                         <option key={classe.id} value={classe.id}>
                           {classe.nome}
                         </option>
                       ))}
                     </select>
+                    {formErrors.classe_id && (
+                      <div style={{ color: '#ef4444', fontSize: 12, marginTop: 4 }}>
+                        {formErrors.classe_id}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

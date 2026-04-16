@@ -1,0 +1,123 @@
+PROGETTAZIONE DATABASE – AULA-NET
+1. PROGETTAZIONE E/R (Entità-Relazioni)
+Entità principali
+
+AULA
+
+id (PK)
+numero (UNIQUE)
+nome_aula
+
+CLASSE
+
+id (PK)
+nome
+indirizzo
+anno
+
+UTENTE
+
+id (PK)
+nome
+cognome
+email (UNIQUE)
+ruolo (studente, docente, ATA, admin)
+classe_id (FK, opzionale)
+
+PRENOTAZIONE
+
+id (PK)
+data
+ora_inizio
+ora_fine
+aula_id (FK)
+utente_id (FK)
+Relazioni
+UTENTE – PRENOTAZIONE
+Relazione: effettua
+Cardinalità: 1:N
+Un utente può effettuare più prenotazioni
+Una prenotazione è effettuata da un solo utente
+AULA – PRENOTAZIONE
+Relazione: riguarda
+Cardinalità: 1:N
+Un'aula può avere più prenotazioni
+Una prenotazione riguarda una sola aula
+PRENOTAZIONE – CLASSE
+Relazione: associata
+Cardinalità: N:M
+Una prenotazione può coinvolgere più classi
+Una classe può partecipare a più prenotazioni
+Entità associativa: prenotazione_classi
+CLASSE – UTENTE
+Relazione: appartiene
+Cardinalità: 1:N
+Una classe ha più studenti
+Uno studente appartiene a una sola classe (opzionale per altri ruoli)
+2. SCHEMA LOGICO (Relazionale)
+Tabelle
+
+AULE
+
+id (PK)
+numero (UNIQUE)
+nome_aula
+
+CLASSI
+
+id (PK)
+nome
+indirizzo
+anno
+
+UTENTI
+
+id (PK)
+nome
+cognome
+email (UNIQUE)
+ruolo
+classe_id (FK → CLASSI.id)
+
+PRENOTAZIONI
+
+id (PK)
+aula_id (FK → AULE.id)
+utente_id (FK → UTENTI.id)
+data
+ora_inizio
+ora_fine
+
+Vincoli:
+
+UNIQUE (aula_id, data, ora_inizio)
+CHECK (ora_fine > ora_inizio)
+
+PRENOTAZIONE_CLASSI
+
+prenotazione_id (FK → PRENOTAZIONI.id)
+classe_id (FK → CLASSI.id)
+PK composta (prenotazione_id, classe_id)
+3. NORMALIZZAZIONE
+Prima Forma Normale (1NF)
+Tutte le tabelle hanno attributi atomici
+Nessun campo multivalore ✔ Soddisfatta
+Seconda Forma Normale (2NF)
+Tutte le tabelle sono in 1NF
+Nessuna dipendenza parziale dalla chiave primaria
+
+Analisi:
+
+Tabelle con chiave semplice (AULE, CLASSI, UTENTI, PRENOTAZIONI) → OK
+Tabella PRENOTAZIONE_CLASSI ha chiave composta ma nessun attributo non chiave → OK
+
+✔ Soddisfatta
+
+Terza Forma Normale (3NF)
+Nessuna dipendenza transitiva
+
+Analisi:
+
+UTENTI: classe_id non determina altri attributi → OK
+PRENOTAZIONI: tutti gli attributi dipendono direttamente dalla PK → OK
+CLASSI: attributi dipendono solo da id → OK

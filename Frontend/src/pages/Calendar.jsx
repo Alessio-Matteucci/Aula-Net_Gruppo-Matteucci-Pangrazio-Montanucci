@@ -52,7 +52,7 @@ export function CalendarPage() {
 
   const canCreate = useMemo(() => {
     const role = (user?.ruolo ?? user?.role ?? '').toString().toLowerCase()
-    return role === 'admin' || role === 'amministratore' || role === 'docente' || role === 'ata'
+    return role === 'admin' || role === 'amministratore' || role === 'docente'
   }, [user])
 
   const load = useCallback(async () => {

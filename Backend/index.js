@@ -137,6 +137,20 @@ export async function createPrenotazione(prenotazioneData) {
         // Assicura che la data sia in formato YYYY-MM-DD senza timezone
         const cleanDate = data ? data.split('T')[0] : data;
         
+        // Controllo sovrapposizioni orarie
+        const [existingBookings] = await connection.query(
+            'SELECT id, ora_inizio, ora_fine FROM prenotazioni WHERE aula_id = ? AND data = ?',
+            [aula_id, cleanDate]
+        );
+        
+        for (const existing of existingBookings) {
+            // Verifica se c'è sovrapposizione:
+            // (inizio1 < fine2) AND (fine1 > inizio2)
+            if (ora_inizio < existing.ora_fine && ora_fine > existing.ora_inizio) {
+                throw new Error('C\'è già una prenotazione per questa aula in questo orario');
+            }
+        }
+        
         // Inserisci la prenotazione principale
         const [result] = await connection.query(
             'INSERT INTO prenotazioni (aula_id, utente_id, data, ora_inizio, ora_fine, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
@@ -247,9 +261,35 @@ export async function updateUtente(id, userData) {
     try {
         const { nome, cognome, email, ruolo, classe_id } = userData;
         
+        // Validazioni backend
+        if (!nome || nome.trim() === '') {
+            throw new Error('Il nome è obbligatorio');
+        }
+        if (!/^[a-zA-Z\sÀ-ÿ]+$/.test(nome.trim())) {
+            throw new Error('Il nome può contenere solo lettere');
+        }
+        
+        if (!cognome || cognome.trim() === '') {
+            throw new Error('Il cognome è obbligatorio');
+        }
+        if (!/^[a-zA-Z\sÀ-ÿ]+$/.test(cognome.trim())) {
+            throw new Error('Il cognome può contenere solo lettere');
+        }
+        
+        if (!email || email.trim() === '') {
+            throw new Error('L\'email è obbligatoria');
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+            throw new Error('Email non valida');
+        }
+        
+        if (ruolo === 'studente' && (!classe_id || classe_id === '')) {
+            throw new Error('La classe è obbligatoria per gli studenti');
+        }
+        
         const [result] = await connection.query(
             'UPDATE utenti SET nome = ?, cognome = ?, email = ?, ruolo = ?, classe_id = ? WHERE id = ?',
-            [nome, cognome, email, ruolo, classe_id || null, id]
+            [nome.trim(), cognome.trim(), email.trim(), ruolo, (ruolo === 'studente' ? classe_id : null), id]
         );
         
         if (result.affectedRows === 0) {
@@ -288,6 +328,60 @@ export async function deleteUtente(id) {
         return { message: 'Utente eliminato con successo' };
     } catch (error) {
         console.error('Error deleting utente:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
+//POST creazione utente (solo admin)
+export async function createUtente(userData) {
+    const connection = await pool.getConnection();
+    try {
+        const { nome, cognome, email, ruolo, classe_id } = userData;
+        
+        // Validazioni backend
+        if (!nome || nome.trim() === '') {
+            throw new Error('Il nome è obbligatorio');
+        }
+        if (!/^[a-zA-Z\sÀ-ÿ]+$/.test(nome.trim())) {
+            throw new Error('Il nome può contenere solo lettere');
+        }
+        
+        if (!cognome || cognome.trim() === '') {
+            throw new Error('Il cognome è obbligatorio');
+        }
+        if (!/^[a-zA-Z\sÀ-ÿ]+$/.test(cognome.trim())) {
+            throw new Error('Il cognome può contenere solo lettere');
+        }
+        
+        if (!email || email.trim() === '') {
+            throw new Error('L\'email è obbligatoria');
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+            throw new Error('Email non valida');
+        }
+        
+        if (ruolo === 'studente' && (!classe_id || classe_id === '')) {
+            throw new Error('La classe è obbligatoria per gli studenti');
+        }
+        
+        const [result] = await connection.query(
+            'INSERT INTO utenti (nome, cognome, email, ruolo, classe_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+            [nome.trim(), cognome.trim(), email.trim(), ruolo, (ruolo === 'studente' ? classe_id : null)]
+        );
+        
+        const utenteId = result.insertId;
+        
+        // Restituisci l'utente creato con i dettagli completi
+        const [createdRows] = await connection.query(
+            'SELECT u.id, u.nome, u.email, u.cognome, u.ruolo, u.classe_id, c.nome AS classe_nome FROM utenti u LEFT JOIN classi c ON c.id = u.classe_id WHERE u.id = ?',
+            [utenteId]
+        );
+        
+        return createdRows[0];
+    } catch (error) {
+        console.error('Error creating utente:', error);
         throw error;
     } finally {
         connection.release();

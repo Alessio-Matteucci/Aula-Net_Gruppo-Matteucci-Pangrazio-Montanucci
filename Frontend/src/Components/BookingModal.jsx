@@ -62,7 +62,7 @@ export function BookingModal({
 
   const canCreate = useMemo(() => {
     const role = (user?.ruolo ?? user?.role ?? '').toString().toLowerCase()
-    return role === 'admin' || role === 'amministratore' || role === 'docente' || role === 'ata'
+    return role === 'admin' || role === 'amministratore' || role === 'docente'
   }, [user])
 
   async function submit() {
