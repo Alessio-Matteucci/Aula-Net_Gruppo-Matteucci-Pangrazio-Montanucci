@@ -1,14 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useMemo } from 'react'
-import { CalendarDays, LayoutDashboard, LogOut, MapPin, Table } from 'lucide-react'
+import { CalendarDays, LayoutDashboard, LogOut, MapPin, Table, Users } from 'lucide-react'
 import { useAuth } from '../auth/AuthProvider.jsx'
-
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/calendario', label: 'Calendario', icon: CalendarDays },
-  { to: '/prenotazioni', label: 'Prenotazioni', icon: Table },
-  { to: '/mappa-scuola', label: 'Mappa scuola', icon: MapPin },
-]
 
 export function AppShell() {
   const { user, logout } = useAuth()
@@ -17,6 +10,22 @@ export function AppShell() {
     return user?.nome || user?.name || user?.email || 'Utente'
   }, [user])
   const role = user?.ruolo || user?.role || null
+
+  const navItems = useMemo(() => {
+    const items = [
+      { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { to: '/calendario', label: 'Calendario', icon: CalendarDays },
+      { to: '/prenotazioni', label: 'Prenotazioni', icon: Table },
+      { to: '/mappa-scuola', label: 'Mappa scuola', icon: MapPin },
+    ]
+
+    // Aggiungi gestione utenti solo per gli admin
+    if (role === 'admin') {
+      items.push({ to: '/gestione-utenti', label: 'Gestione Utenti', icon: Users })
+    }
+
+    return items
+  }, [role])
 
   return (
     <div className="app">

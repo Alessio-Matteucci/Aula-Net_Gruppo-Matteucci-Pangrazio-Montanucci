@@ -6,6 +6,7 @@ import { DashboardPage } from '../pages/Dashboard.jsx'
 import { CalendarPage } from '../pages/Calendar.jsx'
 import { BookingsPage } from '../pages/Bookings.jsx'
 import { Map2DPage } from '../pages/Map2D.jsx'
+import UserManagement from '../pages/UserManagement.jsx'
 import { NotFoundPage } from '../pages/NotFound.jsx'
 
 const BYPASS_AUTH =
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
       { path: 'calendario', element: <CalendarPage /> },
       { path: 'prenotazioni', element: <BookingsPage /> },
       { path: 'mappa-scuola', element: <Map2DPage /> },
+      { path: 'gestione-utenti', element: <UserManagement /> },
     ],
   },
   {

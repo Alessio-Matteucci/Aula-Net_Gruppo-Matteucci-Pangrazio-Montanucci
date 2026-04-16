@@ -228,6 +228,72 @@ export async function getUtente(email) {
     }
 }
 
+//GET tutti gli utenti (solo admin)
+export async function getAllUtenti() {
+    try {
+        const [rows] = await pool.query(
+            'SELECT u.id, u.nome, u.email, u.cognome, u.ruolo, u.classe_id, c.nome AS classe_nome, u.created_at FROM utenti u LEFT JOIN classi c ON c.id = u.classe_id ORDER BY u.ruolo, u.cognome, u.nome'
+        );
+        return rows;
+    } catch (error) {
+        console.error('Error getting all utenti:', error);
+        throw error;
+    }
+}
+
+//PUT aggiornamento utente (solo admin)
+export async function updateUtente(id, userData) {
+    const connection = await pool.getConnection();
+    try {
+        const { nome, cognome, email, ruolo, classe_id } = userData;
+        
+        const [result] = await connection.query(
+            'UPDATE utenti SET nome = ?, cognome = ?, email = ?, ruolo = ?, classe_id = ? WHERE id = ?',
+            [nome, cognome, email, ruolo, classe_id || null, id]
+        );
+        
+        if (result.affectedRows === 0) {
+            throw new Error('Utente non trovato');
+        }
+        
+        // Restituisci l'utente aggiornato
+        const [updatedRows] = await connection.query(
+            'SELECT u.id, u.nome, u.email, u.cognome, u.ruolo, u.classe_id, c.nome AS classe_nome FROM utenti u LEFT JOIN classi c ON c.id = u.classe_id WHERE u.id = ?',
+            [id]
+        );
+        
+        return updatedRows[0];
+    } catch (error) {
+        console.error('Error updating utente:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
+//DELETE utente (solo admin)
+export async function deleteUtente(id) {
+    const connection = await pool.getConnection();
+    try {
+        // Prima elimina le prenotazioni associate
+        await connection.query('DELETE FROM prenotazioni WHERE utente_id = ?', [id]);
+        
+        // Poi elimina l'utente
+        const [result] = await connection.query('DELETE FROM utenti WHERE id = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            throw new Error('Utente non trovato');
+        }
+        
+        return { message: 'Utente eliminato con successo' };
+    } catch (error) {
+        console.error('Error deleting utente:', error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
 //post /login/google, per autenticare un utente tramite Google, permessi tutti e controlla se c'è un'account con quella email, se c'è lo logga se no da errore
 export async function loginGoogle(email, nome) {
     try {

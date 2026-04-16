@@ -4,7 +4,7 @@ import {createPrenotazione} from './index.js';
 import {deletePrenotazione} from './index.js'; 
 import { aule } from './index.js';
 import { classi } from './index.js';
-import { getUtente } from './index.js';
+import { getUtente, getAllUtenti, updateUtente, deleteUtente } from './index.js';
 import { loginGoogle } from './index.js';
 import {checkRuoli} from './index.js';
 import { normalizeRole } from './index.js';
@@ -148,6 +148,56 @@ app.delete('/prenotazioni/:id', checkRuoli(['docente', 'admin']), async (req, re
         res.json({ message: 'Prenotazione eliminata con successo' });
     } catch (error) {
         res.status(500).json({ error: 'Errore nell\'eliminazione della prenotazione' });
+    }
+});
+
+//GET tutti gli utenti (solo admin)
+app.get('/utenti', checkRuoli(['admin']), async (req, res) => {
+    try {
+        const utentiList = await getAllUtenti();
+        res.json(utentiList);
+    } catch (error) {
+        res.status(500).json({ error: 'Errore nel recupero degli utenti' });
+    }
+});
+
+//PUT aggiornamento utente (solo admin)
+app.put('/utenti/:id', checkRuoli(['admin']), async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const userData = req.body || {};
+        
+        const updatedUser = await updateUtente(userId, userData);
+        res.json(updatedUser);
+    } catch (error) {
+        if (error.message.includes('Utente non trovato')) {
+            res.status(404).json({ error: error.message });
+        } else if (error.code === 'ER_DUP_ENTRY') {
+            res.status(409).json({ error: 'Email già in uso' });
+        } else {
+            res.status(500).json({ error: 'Errore nell\'aggiornamento dell\'utente' });
+        }
+    }
+});
+
+//DELETE utente (solo admin)
+app.delete('/utenti/:id', checkRuoli(['admin']), async (req, res) => {
+    try {
+        const userId = req.params.id;
+        
+        // Impedisci l'eliminazione del proprio account
+        if (userId == req.user.id) {
+            return res.status(400).json({ error: 'Non puoi eliminare il tuo account' });
+        }
+        
+        const result = await deleteUtente(userId);
+        res.json(result);
+    } catch (error) {
+        if (error.message.includes('Utente non trovato')) {
+            res.status(404).json({ error: error.message });
+        } else {
+            res.status(500).json({ error: 'Errore nell\'eliminazione dell\'utente' });
+        }
     }
 });
 
