@@ -126,7 +126,12 @@ app.post('/prenotazioni', checkRuoli(ruoliPermessi), async (req, res) => {
         const newPrenotazione = await createPrenotazione(payload);
         res.status(201).json(newPrenotazione);
     } catch (error) {
-        res.status(500).json({ error: 'Errore nella creazione della prenotazione' });
+        // Verifica se è un errore di duplicato (prenotazione già esistente)
+        if (error.code === 'ER_DUP_ENTRY' || error.message?.includes('Duplicate entry')) {
+            res.status(409).json({ error: 'C\'è già una prenotazione per questa aula in questo orario' });
+        } else {
+            res.status(500).json({ error: 'Errore nella creazione della prenotazione' });
+        }
     }
 });
 

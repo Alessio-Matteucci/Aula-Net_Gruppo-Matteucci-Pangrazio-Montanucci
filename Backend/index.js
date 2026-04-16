@@ -214,13 +214,16 @@ export async function classi() {
     }
 }
 
-//GET /utente, per restituire i dati dell'utente autenticato, permessi tutti
+//GET /utente, per restituire i dati dell'utente, permessi tutti
 export async function getUtente(email) {
     try {
-        const [rows] = await pool.query('SELECT * FROM utenti WHERE email = ?', [email]);
+        const [rows] = await pool.query(
+            'SELECT u.id, u.nome, u.email, u.cognome, u.ruolo, u.classe_id, c.nome AS classe_nome FROM utenti u LEFT JOIN classi c ON c.id = u.classe_id WHERE u.email = ?',
+            [email]
+        );
         return rows[0];
     } catch (error) {
-        console.error('Error fetching utente:', error);
+        console.error('Error getting utente:', error);
         throw error;
     }
 }

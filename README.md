@@ -3,31 +3,33 @@
 Applicazione web per la gestione e prenotazione delle aule scolastiche.
 
 Il progetto e composto da:
-- `Frontend` in React + Vite
-- `Backend` in Node.js + Express
-- Database MySQL (dump incluso: `aula_net.sql`)
+
+* `Frontend` in React + Vite
+* `Backend` in Node.js + Express
+* Database MySQL (dump incluso: `aula_net.sql`)
 
 ## Funzionalita principali
 
-- visualizzazione delle aule e delle classi
-- gestione prenotazioni (creazione, elenco, eliminazione)
-- autenticazione utente con Google
-- controllo ruoli lato backend (docente, ATA, admin)
+* visualizzazione delle aule e delle classi
+* gestione prenotazioni (creazione, elenco, eliminazione)
+* autenticazione utente con Google
+* controllo ruoli lato backend (docente, ATA, admin)
 
 ## Struttura del repository
 
-- `Frontend/` interfaccia utente React
-- `Backend/` API REST e logica server
-- `aula_net.sql` struttura e dati iniziali del database
+* `Frontend/` interfaccia utente React
+* `Backend/` API REST e logica server
+* `aula_net.sql` struttura e dati iniziali del database
 
 ## Prerequisiti
 
 Installa questi strumenti sul nuovo dispositivo:
-- Node.js 18+ (consigliato LTS)
-- npm (incluso con Node.js)
-- MySQL Server 8+
-- MySQL Workbench
-- Git
+
+* Node.js 18+ (consigliato LTS)
+* npm (incluso con Node.js)
+* MySQL Server 8+
+* MySQL Workbench
+* Git
 
 Verifica rapida:
 
@@ -57,6 +59,15 @@ cd Aula-Net_Gruppo-Matteucci-Pangrazio-Montanucci
 
 Al termine troverai tabelle come `aule`, `classi`, `prenotazioni`, `utenti`.
 
+### Inserimento utente di esempio
+
+Esegui questa query per aggiungere un utente di test:
+
+```sql
+INSERT INTO utenti (nome, email, cognome, ruolo, classe_id)
+VALUES ('NuovoStudente', 'email@email.com', 'Cognome', 'studente', 4);
+```
+
 ### 3) Configura i file `.env`
 
 #### Backend
@@ -83,9 +94,11 @@ VITE_BYPASS_EMAIL=email@gmail.com
 ```
 
 Note:
-- `VITE_API_BASE_URL` deve puntare al backend.
-- `VITE_BYPASS_AUTH=true` abilita un accesso di sviluppo senza login Google reale.
-- Per uso reale imposta `VITE_BYPASS_AUTH=false` e configura `VITE_GOOGLE_CLIENT_ID`.
+
+* `VITE_API_BASE_URL` deve puntare al backend.
+* `VITE_BYPASS_AUTH=true` abilita un accesso di sviluppo senza login Google reale.
+* Per uso reale imposta `VITE_BYPASS_AUTH=false` e configura `VITE_GOOGLE_CLIENT_ID`.
+* **Il frontend deve essere eseguito esclusivamente sulle porte `5173` o `5176`**, altrimenti l'autenticazione Google non funzionera correttamente (restrizioni sugli URI autorizzati).
 
 ### 4) Installa le dipendenze (`npm install`)
 
@@ -119,49 +132,53 @@ cd Frontend
 npm run dev
 ```
 
-Il frontend sara disponibile normalmente su `http://localhost:5173` (porta Vite predefinita) e comunichera con il backend su `http://localhost:3000`.
+Il frontend sara disponibile normalmente su `http://localhost:5173` (porta Vite predefinita) oppure `http://localhost:5176` e comunichera con il backend su `http://localhost:3000`.
 
 ## Script disponibili
 
 ### Backend (`Backend/package.json`)
 
-- `npm run dev` avvio server in watch mode
-- `npm start` avvio server normale
+* `npm run dev` avvio server in watch mode
+* `npm start` avvio server normale
 
 ### Frontend (`Frontend/package.json`)
 
-- `npm run dev` avvio in sviluppo
-- `npm run build` build produzione
-- `npm run preview` anteprima build
-- `npm run lint` controllo lint
+* `npm run dev` avvio in sviluppo
+* `npm run build` build produzione
+* `npm run preview` anteprima build
+* `npm run lint` controllo lint
 
 ## API principali (backend)
 
-- `GET /prenotazioni`
-- `POST /prenotazioni`
-- `DELETE /prenotazioni/:id`
-- `GET /aule`
-- `GET /classi`
-- `GET /utente`
-- `POST /login/google`
-- `POST /login` (retro-compatibilita)
+* `GET /prenotazioni`
+* `POST /prenotazioni`
+* `DELETE /prenotazioni/:id`
+* `GET /aule`
+* `GET /classi`
+* `GET /utente`
+* `POST /login/google`
+* `POST /login` (retro-compatibilita)
 
 ## Troubleshooting rapido
 
-- Errore connessione DB:
-  - verifica credenziali in `Backend/.env`
-  - controlla che MySQL sia avviato
-  - conferma che il DB si chiami `aula_net`
+* Errore connessione DB:
 
-- Frontend non raggiunge backend:
-  - controlla `VITE_API_BASE_URL` in `Frontend/.env`
-  - verifica che il backend sia in ascolto sulla porta `3000`
+  * verifica credenziali in `Backend/.env`
+  * controlla che MySQL sia avviato
+  * conferma che il DB si chiami `aula_net`
 
-- Login Google fallisce:
-  - controlla `VITE_GOOGLE_CLIENT_ID`
-  - verifica che l'email sia presente nella tabella `utenti`
+* Frontend non raggiunge backend:
+
+  * controlla `VITE_API_BASE_URL` in `Frontend/.env`
+  * verifica che il backend sia in ascolto sulla porta `3000`
+
+* Login Google fallisce:
+
+  * controlla `VITE_GOOGLE_CLIENT_ID`
+  * verifica che l'email sia presente nella tabella `utenti`
+  * verifica che il frontend sia avviato su `5173` o `5176`
 
 ## Note per il team
 
-- Mantieni aggiornato `aula_net.sql` quando cambiano schema o dati base.
-- Non committare file `.env` con credenziali reali.
+* Mantieni aggiornato `aula_net.sql` quando cambiano schema o dati base.
+* Non committare file `.env` con credenziali reali.

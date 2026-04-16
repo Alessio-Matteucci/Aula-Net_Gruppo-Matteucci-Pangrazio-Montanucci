@@ -41,7 +41,14 @@ export function CalendarPage() {
   const [classi, setClassi] = useState([])
 
   const filterAula = searchParams.get('aula') || ''
-  const filterClasse = searchParams.get('classe') || ''
+  // Filtro classe fisso per studenti, altrimenti usa il parametro URL
+  const filterClasse = useMemo(() => {
+    const role = (user?.ruolo ?? user?.role ?? '').toString().toLowerCase()
+    if (role === 'studente' && user?.classe_id) {
+      return user.classe_id.toString()
+    }
+    return searchParams.get('classe') || ''
+  }, [user, searchParams])
 
   const canCreate = useMemo(() => {
     const role = (user?.ruolo ?? user?.role ?? '').toString().toLowerCase()

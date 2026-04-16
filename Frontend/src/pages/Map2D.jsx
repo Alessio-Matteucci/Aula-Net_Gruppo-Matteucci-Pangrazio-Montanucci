@@ -296,39 +296,45 @@ export function Map2DPage() {
             </datalist>
           </div>
 
-          {/* Gruppo Ricerca Classe */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div className="label">Cerca classe</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <input
-                className="input"
-                list="classi-suggest-header"
-                placeholder="es. 5AIA"
-                value={classQuery}
-                onChange={(e) => setClassQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    goToClassFromSearch()
-                  }
-                }}
-                style={{ width: 120 }}
-              />
-              <button className="btn" disabled={!normalizedClassQuery} onClick={goToClassFromSearch}>
-                Vai
-              </button>
-              {classQuery && (
-                <button className="btn" onClick={() => setClassQuery('')} title="Reset classe">
-                  ×
-                </button>
-              )}
-            </div>
-            <datalist id="classi-suggest-header">
-              {classSuggestions.map((name) => (
-                <option key={`h-${name}`} value={name} />
-              ))}
-            </datalist>
-          </div>
+          {/* Gruppo Ricerca Classe - solo per docenti, admin, ATA */}
+          {(() => {
+            const role = (user?.ruolo ?? user?.role ?? '').toString().toLowerCase()
+            const canSearchClass = role === 'admin' || role === 'docente' || role === 'ata'
+            return canSearchClass ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div className="label">Cerca classe</div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input
+                    className="input"
+                    list="classi-suggest-header"
+                    placeholder="es. 5AIA"
+                    value={classQuery}
+                    onChange={(e) => setClassQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        goToClassFromSearch()
+                      }
+                    }}
+                    style={{ width: 120 }}
+                  />
+                  <button className="btn" disabled={!normalizedClassQuery} onClick={goToClassFromSearch}>
+                    Vai
+                  </button>
+                  {classQuery && (
+                    <button className="btn" onClick={() => setClassQuery('')} title="Reset classe">
+                      ×
+                    </button>
+                  )}
+                </div>
+                <datalist id="classi-suggest-header">
+                  {classSuggestions.map((name) => (
+                    <option key={`h-${name}`} value={name} />
+                  ))}
+                </datalist>
+              </div>
+            ) : null
+          })()}
 
           {/* Gruppo Azioni */}
           <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>

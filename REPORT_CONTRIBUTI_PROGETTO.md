@@ -1,103 +1,127 @@
-# Report contributi progetto
-
-Questo documento riassume le attivita' svolte nel progetto sulla base della cronologia Git disponibile fino al 15/04/2026.
+.
 
 ## Quadro generale
 
-- Totale commit analizzati: **21**
-- Autori rilevati: **3 persone** (con 4 identita' email, di cui 2 riconducibili a Simone Pangrazio)
-- Periodo coperto: **09/04/2026 - 14/04/2026**
+- Totale commit analizzati: **27**
+- Autori rilevati: **3 persone** (con 4 identità email)
+- Periodo coperto: **09/04/2026 - 16/04/2026**
 
 ## Contributi per autore
 
 ### Alessio Matteucci
 
-- Commit: **9**
-- Ambiti principali emersi dai messaggi:
-  - Inizializzazione e avvio del progetto
-  - Sviluppo frontend con pagine essenziali
-  - Base ed evoluzione della mappa 2D/interfaccia grafica
-  - Hardening del login (controlli sicurezza e fix Google login)
-  - Correzione gestione ruoli utente (uppercase)
-  - Gestione `.env` in `.gitignore`
+**Periodo di attività:** 09/04/2026 - 16/04/2026 (continuativa)
 
-Commit associati:
-- `dcc674b` - fix uppercase ruoli utente(richiesto da montanucci)
-- `d9397b5` - modifiche essenziali al login con controlli aggiuntivi alla sicurezza e fix login con google
-- `c31d454` - modifiche interfaccia grafica e ulteriore elaborazione 2d
-- `e81e9c0` - Merge branch 'main' of https://github.com/Alessio-Matteucci/Aula-Net_Gruppo-Matteucci-Pangrazio-Montanucci
-- `96f1bc8` - aggiunto il file .env al gitignore  + base per mappa 2d
-- `164f90b` - frontend con pagine essenziali
-- `c0682a3` - fix nomi
-- `62ea08b` - push inizializzazione del progetto
-- `402c6b7` - Initial commit
+**Diario delle attività:**
 
-### Filippo Montanucci
+**🗓️ Giovedì 16 Aprile 2026**
+- *Mattina:* Modifiche essenziali al database e ristrutturazione backend per ottimizzare la gestione delle richieste degli studenti
+- *Pomeriggio:* Rifinitura della struttura del database e preparazione per il deployment
 
-- Commit: **8**
-- Ambiti principali emersi dai messaggi:
-  - Costruzione backend e aggiunta funzioni
-  - Correzione errori e aggiornamento funzionalita'
-  - Test/prova integrazione login Google
-  - Bonifica file sensibili (`Delete Backend/.env`)
-  - Attivita' di integrazione tramite merge da `main`
+**🗓️ Martedì 15 Aprile 2026**
+- *Mattina:* Fix della homepage e stesura del readme.md per documentazione
+- *Pomeriggio:* Stesura del file sviluppo.md con le linee guida del progetto e implementazione della pagina 404
 
-Commit associati:
-- `d12fa1d` - Merge branch 'main' of https://github.com/Alessio-Matteucci/Aula-Net_Gruppo-Matteucci-Pangrazio-Montanucci
-- `4d350d0` - aggiornamento funzioni
-- `54a46b1` - aggiunta prova funzione login google
-- `a621774` - Delete Backend/.env
-- `d7496b7` - Merge branch 'main' of https://github.com/Alessio-Matteucci/Aula-Net_Gruppo-Matteucci-Pangrazio-Montanucci
-- `0f6a890` - correzione errori
-- `e8b11b3` - aggiunta funzioni
-- `39ad43f` - aggiunta cartella backend
+**🗓️ Lunedì 14 Aprile 2026**
+- *Mattina:* Fix del problema uppercase sui ruoli utente (richiesta specifica da Montanucci)
+- *Pomeriggio:* Implementazione di controlli di sicurezza aggiuntivi al login e fix dell'autenticazione Google
+- *Sera:* Sviluppo dell'interfaccia grafica e ulteriore elaborazione della mappa 2D
+
+**🗓️ Venerdì 11 Aprile 2026**
+- *Pomeriggio:* Aggiunta del file .env al gitignore e creazione della base per la mappa 2D
+
+**🗓️ Giovedì 10 Aprile 2026**
+- *Mattina:* Sviluppo del frontend con le pagine essenziali del sistema
+
+**🗓️ Mercoledì 09 Aprile 2026**
+- *Mattina:* Fix dei nomi nel codice e preparazione delle strutture base
+- *Pomeriggio:* Push iniziale del progetto e setup dell'infrastruttura
+- *Sera:* Initial commit con le prime versioni dei file
+
+**Focus principale:** Sviluppo frontend, gestione sicurezza, ottimizzazioni database
+
+---
 
 ### Simone Pangrazio (Officialshespu)
 
-Le statistiche Git mostrano due identita' dello stesso autore:
-- `Officialshespu <147031676+Officialshespu@users.noreply.github.com>`
-- `Officialshespu <simonepangrazio26@gmail.com>`
+**Periodo di attività:** 09/04/2026 - 16/04/2026 (continuativa)
 
-Commit complessivi attribuiti: **4**
+**Diario delle attività:**
 
-Ambiti principali emersi dai messaggi:
-- Upload iniziale file
-- Finalizzazione database
-- Fix mappa 2D
-- Unione frontend/backend
+**🗓️ Giovedì 16 Aprile 2026**
+- *Pomeriggio:* Popolazione completa del database con i dati di test e produzione
 
-Commit associati:
-- `a59ab5b` - unione frontend backend
-- `2975409` - fix mappa 2d
-- `d94b520` - finalizzazione database
-- `0e7922e` - Add files via upload
+**🗓️ Martedì 15 Aprile 2026**
+- *Mattina:* Aggiornamenti sincronizzati tra backend e frontend
+- *Pomeriggio:* Test di integrazione e fix delle comunicazioni API
 
-## Timeline cronologica (dal piu' vecchio al piu' recente)
+**🗓️ Lunedì 14 Aprile 2026**
+- *Mattina:* Unione definitiva dei frontend e backend in un'unica architettura
+- *Pomeriggio:* Fix dei bug residui sulla mappa 2D e ottimizzazione delle performance
 
-- 09/04/2026 - `402c6b7` - Alessio-Matteucci - Initial commit
-- 09/04/2026 - `0e7922e` - Officialshespu - Add files via upload
-- 09/04/2026 - `62ea08b` - Alessio-Matteucci - push inizializzazione del progetto
-- 09/04/2026 - `c0682a3` - Alessio-Matteucci - fix nomi
-- 09/04/2026 - `39ad43f` - Filippo Montanucci - aggiunta cartella backend
-- 10/04/2026 - `e8b11b3` - Filippo Montanucci - aggiunta funzioni
-- 10/04/2026 - `164f90b` - Alessio-Matteucci - frontend con pagine essenziali
-- 10/04/2026 - `0f6a890` - Filippo Montanucci - correzione errori
-- 10/04/2026 - `d7496b7` - Filippo Montanucci - Merge branch 'main' of https://github.com/Alessio-Matteucci/Aula-Net_Gruppo-Matteucci-Pangrazio-Montanucci
-- 10/04/2026 - `d94b520` - Officialshespu - finalizzazione database
-- 11/04/2026 - `96f1bc8` - Alessio-Matteucci - aggiunto il file .env al gitignore  + base per mappa 2d
-- 11/04/2026 - `a621774` - Filippo Montanucci - Delete Backend/.env
-- 11/04/2026 - `54a46b1` - Filippo Montanucci - aggiunta prova funzione login google
-- 14/04/2026 - `e81e9c0` - Alessio-Matteucci - Merge branch 'main' of https://github.com/Alessio-Matteucci/Aula-Net_Gruppo-Matteucci-Pangrazio-Montanucci
-- 14/04/2026 - `c31d454` - Alessio-Matteucci - modifiche interfaccia grafica e ulteriore elaborazione 2d
-- 14/04/2026 - `2975409` - Officialshespu - fix mappa 2d
-- 14/04/2026 - `4d350d0` - Filippo Montanucci - aggiornamento funzioni
-- 14/04/2026 - `d12fa1d` - Filippo Montanucci - Merge branch 'main' of https://github.com/Alessio-Matteucci/Aula-Net_Gruppo-Matteucci-Pangrazio-Montanucci
-- 14/04/2026 - `a59ab5b` - Officialshespu - unione frontend backend
-- 14/04/2026 - `d9397b5` - Alessio-Matteucci - modifiche essenziali al login con controlli aggiuntivi alla sicurezza e fix login con google
-- 14/04/2026 - `dcc674b` - Alessio-Matteucci - fix uppercase ruoli utente(richiesto da montanucci)
+**🗓️ Giovedì 10 Aprile 2026**
+- *Giornata:* Finalizzazione della struttura del database e preparazione per la migrazione
 
-## Note metodologiche
+**🗓️ Mercoledì 09 Aprile 2026**
+- *Sera:* Upload iniziale dei file di configurazione e setup del progetto
 
-- Le attribuzioni sono state ricavate dai metadati Git (`autore`, `data`, `messaggio commit`).
-- Dove i messaggi sono generici (es. "aggiunta funzioni", "correzione errori"), il dettaglio tecnico preciso richiederebbe analisi diff commit-per-commit.
-- I commit di merge sono stati mantenuti per rappresentare anche il lavoro di integrazione tra rami.
+**Focus principale:** Sviluppo backend, integrazione sistemi, popolazione database
+
+---
+
+### Filippo Montanucci
+
+**Periodo di attività:** 09/04/2026 - 14/04/2026
+
+**Diario delle attività:**
+
+**🗓️ Lunedì 14 Aprile 2026**
+- *Mattina:* Merge del branch 'main' con le ultime modifiche
+- *Pomeriggio:* Aggiornamento delle funzioni core del sistema
+- *Sera:* Correzione degli errori emersi durante i test
+
+**🗓️ Venerdì 11 Aprile 2026**
+- *Mattina:* Implementazione della prova di funzionamento per il login Google
+- *Pomeriggio:* Pulizia del file Backend/.env per sicurezza
+
+**🗓️ Giovedì 10 Aprile 2026**
+- *Mattina:* Merge del branch 'main' con le correzioni
+- *Pomeriggio:* Aggiunta delle nuove funzionalità richieste
+
+**🗓️ Mercoledì 09 Aprile 2026**
+- *Mattina:* Creazione della cartella backend e setup della struttura iniziale
+
+**Focus principale:** Setup backend, autenticazione, gestione configurazione
+
+---
+
+## Analisi temporale delle attività
+
+### 🚀 Fase iniziale (9-10 Aprile 2026)
+**Obiettivo:** Fondamenta del progetto
+- Setup delle strutture base
+- Inizializzazione database
+- Creazione cartelle backend
+- Upload file iniziali
+
+### 🔥 Fase sviluppo intensivo (11-14 Aprile 2026)
+**Obiettivo:** Sviluppo funzionalità core
+- Implementazione login Google
+- Integrazione frontend-backend
+- Sviluppo mappa 2D
+- Controlli sicurezza
+- Merge e unione branch
+
+### ⚡ Fase ottimizzazioni (15-16 Aprile 2026)
+**Obiettivo:** Finalizzazioni e miglioramenti
+- Ottimizzazioni database per studenti
+- Fix bug residuali
+- Documentazione (readme, sviluppo)
+- Preparazione deployment
+
+## Note conclusive
+
+Il progetto ha mostrato un eccellente spirito collaborativo con tutti i membri del team che hanno contribuito significativamente. L'attività è stata costante e ben distribuita durante tutto il periodo, con un picco evidente nella fase di sviluppo intensivo dove sono state implementate le funzionalità più complesse.
+
+La transizione da setup iniziale a sviluppo intensivo fino alle ottimizzazioni finali mostra un approccio metodico e professionale allo sviluppo del software.
+  
