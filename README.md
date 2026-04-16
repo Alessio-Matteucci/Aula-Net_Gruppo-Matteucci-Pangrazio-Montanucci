@@ -14,6 +14,11 @@ Il progetto e composto da:
 * gestione prenotazioni (creazione, elenco, eliminazione)
 * autenticazione utente con Google
 * controllo ruoli lato backend (docente, ATA, admin)
+* pannello amministrazione per gestione utenti (CRUD completo)
+* mappa 2D interattiva per visualizzazione rapida disponibilità aule
+* calendario FullCalendar con vista giorno/settimana/mese
+* controllo sovrapposizioni prenotazioni automatico
+* gestione permessi basata su ruolo utente
 
 ## Struttura del repository
 
@@ -150,14 +155,24 @@ Il frontend sara disponibile normalmente su `http://localhost:5173` (porta Vite 
 
 ## API principali (backend)
 
-* `GET /prenotazioni`
-* `POST /prenotazioni`
-* `DELETE /prenotazioni/:id`
-* `GET /aule`
-* `GET /classi`
-* `GET /utente`
-* `POST /login/google`
-* `POST /login` (retro-compatibilita)
+### Prenotazioni
+* `GET /prenotazioni` - Visualizza prenotazioni con filtri
+* `POST /prenotazioni` - Crea nuova prenotazione (docente/ATA/admin)
+* `DELETE /prenotazioni/:id` - Elimina prenotazione (proprie o admin)
+
+### Risorse
+* `GET /aule` - Lista tutte le aule (1-119)
+* `GET /classi` - Lista tutte le classi (65 classi complete)
+* `GET /utente` - Dati utente autenticato
+
+### Gestione Utenti (solo admin)
+* `GET /utenti` - Lista tutti gli utenti
+* `PUT /utenti/:id` - Aggiorna dati utente
+* `DELETE /utenti/:id` - Elimina utente
+
+### Autenticazione
+* `POST /login/google` - Login con OAuth Google
+* `POST /login` - Login legacy (retro-compatibilità)
 
 ## Troubleshooting rapido
 
