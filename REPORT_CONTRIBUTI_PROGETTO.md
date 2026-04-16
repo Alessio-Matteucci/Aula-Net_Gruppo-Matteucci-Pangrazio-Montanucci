@@ -2,7 +2,7 @@
 
 ## Quadro generale
 
-- Totale commit analizzati: **27**
+- Totale commit analizzati: **30**
 - Autori rilevati: **3 persone** (con 4 identità email)
 - Periodo coperto: **09/04/2026 - 16/04/2026**
 
@@ -49,7 +49,9 @@
 **Diario delle attività:**
 
 **🗓️ Giovedì 16 Aprile 2026**
-- *Pomeriggio:* Popolazione completa del database con i dati di test e produzione
+- *Mattina:* Popolazione completa del database con i dati di test e produzione
+- *Pomeriggio:* Sviluppo schermata gestione profili per admin con funzionalità CRUD complete
+- *Sera:* Aggiornamenti generali backend-frontend e modifiche visive al sistema
 
 **🗓️ Martedì 15 Aprile 2026**
 - *Mattina:* Aggiornamenti sincronizzati tra backend e frontend
@@ -118,10 +120,6 @@
 - Fix bug residuali
 - Documentazione (readme, sviluppo)
 - Preparazione deployment
+- Sviluppo pannello admin per gestione utenti (CRUD completo)
+- Miglioramento gestione errori prenotazioni sovrapposte
 
-## Note conclusive
-
-Il progetto ha mostrato un eccellente spirito collaborativo con tutti i membri del team che hanno contribuito significativamente. L'attività è stata costante e ben distribuita durante tutto il periodo, con un picco evidente nella fase di sviluppo intensivo dove sono state implementate le funzionalità più complesse.
-
-La transizione da setup iniziale a sviluppo intensivo fino alle ottimizzazioni finali mostra un approccio metodico e professionale allo sviluppo del software.
-  
