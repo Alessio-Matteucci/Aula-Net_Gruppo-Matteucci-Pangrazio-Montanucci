@@ -130,13 +130,15 @@ export function UpcomingEvents() {
               border: '1px solid rgba(124, 58, 237, 0.15)',
               transition: 'all 0.2s ease'
             }}
-            onMouseOver={(e) => {
-              e.target.style.background = 'rgba(124, 58, 237, 0.12)'
-              e.target.style.borderColor = 'rgba(124, 58, 237, 0.25)'
+            onMouseEnter={(e) => {
+              // Usa `currentTarget` per evitare che, passando sopra elementi figli,
+              // venga modificato (e poi non resettato) il nodo sbagliato.
+              e.currentTarget.style.background = 'rgba(124, 58, 237, 0.12)'
+              e.currentTarget.style.borderColor = 'rgba(124, 58, 237, 0.25)'
             }}
-            onMouseOut={(e) => {
-              e.target.style.background = 'rgba(124, 58, 237, 0.08)'
-              e.target.style.borderColor = 'rgba(124, 58, 237, 0.15)'
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(124, 58, 237, 0.08)'
+              e.currentTarget.style.borderColor = 'rgba(124, 58, 237, 0.15)'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
