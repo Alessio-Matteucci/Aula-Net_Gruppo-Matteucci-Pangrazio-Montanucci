@@ -46,7 +46,7 @@ export async function prenotazioni(filters = {}) {
                 a.numero AS aula_numero,
                 u.email AS utente_email,
                 u.nome AS utente_nome,
-                u.cogome AS utente_cognome,
+                u.cognome AS utente_cognome,
                 pc.classe_id AS classe_id,
                 c.nome AS classe_nome
             FROM prenotazioni p
