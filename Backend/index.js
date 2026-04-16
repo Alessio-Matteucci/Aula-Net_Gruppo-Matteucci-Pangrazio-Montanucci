@@ -86,6 +86,10 @@ export async function prenotazioni(filters = {}) {
             conditions.push('p.utente_id = ?');
             params.push(filters.utente_id);
         }
+        if (filters.student_classe_id) {
+            conditions.push('pc.classe_id = ?');
+            params.push(filters.student_classe_id);
+        }
 
         if (conditions.length > 0) {
             query += ' WHERE ' + conditions.join(' AND ');
@@ -237,6 +241,7 @@ export async function loginGoogle(email, nome) {
                 email: user.email,
                 nome: user.nome || nome || user.email,
                 ruolo: user.ruolo,
+                classe_id: user.classe_id,
             };
         } else {
             throw new Error('Utente non trovato');

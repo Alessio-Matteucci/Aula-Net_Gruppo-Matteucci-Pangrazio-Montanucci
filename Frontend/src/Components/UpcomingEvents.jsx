@@ -41,13 +41,23 @@ export function UpcomingEvents() {
         const qs = new URLSearchParams()
         qs.set('limit', '10') // Limit to next 10 events
         
-        // If user has admin role, we might want to see all, but for now show user's bookings
-        const userId = user?.id ?? user?.utente_id
-        const userEmail = user?.email
-        if (userId) {
-          qs.set('utente_id', userId)
-        } else if (userEmail) {
-          qs.set('utente_email', userEmail)
+        // Check user role to determine filtering
+        const userRole = (user?.ruolo ?? user?.role ?? '').toString().toLowerCase()
+        
+        if (userRole === 'admin' || userRole === 'amministratore') {
+          // Admin can see all bookings - no user filter needed
+          console.log('Loading all bookings for admin user')
+        } else {
+          // Professors, students, ATA can only see their own bookings
+          const userId = user?.id ?? user?.utente_id
+          const userEmail = user?.email
+          if (userId) {
+            qs.set('utente_id', userId)
+            console.log('Loading bookings for user ID:', userId)
+          } else if (userEmail) {
+            qs.set('utente_email', userEmail)
+            console.log('Loading bookings for user email:', userEmail)
+          }
         }
 
         const payload = await apiFetch(`/prenotazioni?${qs.toString()}`, { token })
@@ -73,6 +83,9 @@ export function UpcomingEvents() {
     }
   }, [token, user])
 
+  const userRole = (user?.ruolo ?? user?.role ?? '').toString().toLowerCase()
+  const isAdmin = userRole === 'admin' || userRole === 'amministratore'
+  
   const upcomingEvents = useMemo(() => {
     return bookings
       .filter(booking => {
@@ -87,11 +100,19 @@ export function UpcomingEvents() {
       .slice(0, 5) // Show max 5 upcoming events
   }, [bookings])
 
+  const getComponentTitle = () => {
+    if (isAdmin) {
+      return 'Prossimi eventi (tutti)'
+    } else {
+      return 'I tuoi prossimi eventi'
+    }
+  }
+
   if (loading) {
     return (
       <div className="card glass">
         <div className="muted" style={{ marginBottom: 12 }}>
-          I tuoi prossimi eventi
+          {getComponentTitle()}
         </div>
         <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-2)' }}>
           Caricamento...
@@ -104,10 +125,10 @@ export function UpcomingEvents() {
     return (
       <div className="card glass">
         <div className="muted" style={{ marginBottom: 12 }}>
-          I tuoi prossimi eventi
+          {getComponentTitle()}
         </div>
         <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-2)' }}>
-          Nessun evento imminente
+          {isAdmin ? 'Nessun evento imminente' : 'Nessun evento imminente'}
         </div>
       </div>
     )
@@ -116,7 +137,7 @@ export function UpcomingEvents() {
   return (
     <div className="card glass">
       <div className="muted" style={{ marginBottom: 16 }}>
-        I tuoi prossimi eventi
+        {getComponentTitle()}
       </div>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -58,7 +58,7 @@ CREATE TABLE `classi` (
   `anno` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `classi_chk_1` CHECK ((`anno` between 1 and 5))
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -67,8 +67,76 @@ CREATE TABLE `classi` (
 
 LOCK TABLES `classi` WRITE;
 /*!40000 ALTER TABLE `classi` DISABLE KEYS */;
-INSERT INTO `classi` VALUES (1,'1AIA','Informatica',1),(2,'2AIA','Informatica',2),(3,'3AIA','Informatica',3),(4,'4AIA','Informatica',4),(5,'5AIA','Informatica',5),(6,'1BMM','Meccanica',1),(7,'2BMM','Meccanica',2),(8,'3BMM','Meccanica',3),(9,'4BMM','Meccanica',4),(10,'5BMM','Meccanica',5);
-/*!40000 ALTER TABLE `classi` ENABLE KEYS */;
+INSERT INTO classi (nome, indirizzo, anno) VALUES
+('1ACA', 'Chimica', 1),
+('1ACM', 'Chimica e Materiali', 1),
+('1AEE', 'Elettronica', 1),
+('1AIT', 'Informatica e Telecomunicazioni', 1),
+('1AMM', 'Meccanica e Meccatronica', 1),
+('1ATL', 'Altro', 1),
+('1BEE', 'Elettronica', 1),
+('1BIT', 'Informatica e Telecomunicazioni', 1),
+('1BMM', 'Meccanica e Meccatronica', 1),
+('1CIT', 'Informatica e Telecomunicazioni', 1),
+('1CMM', 'Meccanica e Meccatronica', 1),
+('1DIT', 'Informatica e Telecomunicazioni', 1),
+
+('2ACM', 'Chimica e Materiali', 2),
+('2AE', 'Elettronica', 2),
+('2AIT', 'Informatica e Telecomunicazioni', 2),
+('2AMM', 'Meccanica e Meccatronica', 2),
+('2BCM', 'Chimica e Materiali', 2),
+('2BEE', 'Elettronica', 2),
+('2BIT', 'Informatica e Telecomunicazioni', 2),
+('2BMM', 'Meccanica e Meccatronica', 2),
+('2CA', 'Chimica', 2),
+('2CEE', 'Elettronica', 2),
+('2CIT', 'Informatica e Telecomunicazioni', 2),
+('2CMM', 'Meccanica e Meccatronica', 2),
+('2DIT', 'Informatica e Telecomunicazioni', 2),
+('2EIT', 'Informatica e Telecomunicazioni', 2),
+
+('3ABS', 'Altro', 3),
+('3AC', 'Chimica', 3),
+('3ACA', 'Chimica', 3),
+('3AEC', 'Elettronica', 3),
+('3AET', 'Elettronica', 3),
+('3AIA', 'Informatica e Telecomunicazioni', 3),
+('3AMM', 'Meccanica e Meccatronica', 3),
+('3BBS', 'Altro', 3),
+('3BIA', 'Informatica e Telecomunicazioni', 3),
+('3BMM', 'Meccanica e Meccatronica', 3),
+('3CIA', 'Informatica e Telecomunicazioni', 3),
+('3CS', 'Costruzioni del Mezzo', 3),
+
+('4AAT', 'Altro', 4),
+('4ABS', 'Altro', 4),
+('4AC', 'Chimica', 4),
+('4ACA', 'Chimica', 4),
+('4AET', 'Elettronica', 4),
+('4AIA', 'Informatica e Telecomunicazioni', 4),
+('4AMM', 'Meccanica e Meccatronica', 4),
+('4BBS', 'Altro', 4),
+('4BIA', 'Informatica e Telecomunicazioni', 4),
+('4BMM', 'Meccanica e Meccatronica', 4),
+('4CIA', 'Informatica e Telecomunicazioni', 4),
+('4DIA', 'Informatica e Telecomunicazioni', 4),
+('4EC', 'Elettronica', 4),
+
+('5ABS', 'Altro', 5),
+('5ACA', 'Chimica', 5),
+('5ACM', 'Chimica e Materiali', 5),
+('5ACS', 'Costruzioni del Mezzo', 5),
+('5AET', 'Elettronica', 5),
+('5AIA', 'Informatica e Telecomunicazioni', 5),
+('5AMM', 'Meccanica e Meccatronica', 5),
+('5AT', 'Altro', 5),
+('5BCM', 'Chimica e Materiali', 5),
+('5BIA', 'Informatica e Telecomunicazioni', 5),
+('5BMM', 'Meccanica e Meccatronica', 5),
+('5CIA', 'Informatica e Telecomunicazioni', 5),
+('5DIA', 'Informatica e Telecomunicazioni', 5),
+('5EC', 'Elettronica', 5);
 UNLOCK TABLES;
 
 --
@@ -132,6 +200,7 @@ INSERT INTO `prenotazioni` VALUES (1,4,5,'2026-05-13','10:00:00','11:00:00','202
 /*!40000 ALTER TABLE `prenotazioni` ENABLE KEYS */;
 UNLOCK TABLES;
 
+
 --
 -- Table structure for table `utenti`
 --
@@ -145,10 +214,13 @@ CREATE TABLE `utenti` (
   `email` varchar(150) NOT NULL,
   `cognome` varchar(150) NOT NULL,
   `ruolo` enum('studente','docente','ATA','admin') NOT NULL,
+  `classe_id` int DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  UNIQUE KEY `email` (`email`),
+  KEY `classe_id` (`classe_id`),
+  CONSTRAINT `utenti_ibfk_1` FOREIGN KEY (`classe_id`) REFERENCES `classi` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -157,7 +229,7 @@ CREATE TABLE `utenti` (
 
 LOCK TABLES `utenti` WRITE;
 /*!40000 ALTER TABLE `utenti` DISABLE KEYS */;
-INSERT INTO `utenti` VALUES (1,'Alessio','aessiom2007@gmail.com','Matteucci','admin','2026-04-16 13:30:25'),(2,'Alessio','alessio.matteucci@ittterni.org','Matteucci','docente','2026-04-16 13:30:25'),(3,'Mario','mario@mail.com','Rossi','studente','2026-04-16 13:30:25'),(4,'Luca','luca@mail.com','Bianchi','studente','2026-04-16 13:30:25'),(5,'Anna','anna@mail.com','Verdi','docente','2026-04-16 13:30:25'),(6,'Sara','sara@mail.com','Blu','studente','2026-04-16 13:30:25');
+INSERT INTO `utenti` VALUES (1,'Alessio','aessiom2007@gmail.com','Matteucci','admin',NULL,'2026-04-16 13:30:25'),(2,'Alessio','alessio.matteucci@ittterni.org','Matteucci','docente',NULL,'2026-04-16 13:30:25'),(3,'Mario','mario@mail.com','Rossi','studente',1,'2026-04-16 13:30:25'),(4,'Luca','luca@mail.com','Bianchi','studente',1,'2026-04-16 13:30:25'),(5,'Anna','anna@mail.com','Verdi','docente',NULL,'2026-04-16 13:30:25'),(6,'Sara','sara@mail.com','Blu','studente',6,'2026-04-16 13:30:25'),(7,'Alessio','alessiom2007@gmail.com','Matteucci','studente',4,'2026-04-16 13:30:25');
 /*!40000 ALTER TABLE `utenti` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

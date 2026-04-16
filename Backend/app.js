@@ -74,8 +74,10 @@ app.get('/prenotazioni', async (req, res) => {
         // - admin vede sempre tutte
         // - docente/ata vedono tutte solo se all_bookings=true (per mappa 2D)
         // - docente/ata vedono prenotazioni di un'aula specifica se aula_id è specificato
+        // - studente vede prenotazioni della sua classe o le proprie
         // - altrimenti vedono solo le proprie
         let utente_id = null;
+        let student_classe_id = null;
         const userRole = normalizeRole(req.user?.ruolo);
         
         if (userRole !== 'admin') {
@@ -83,15 +85,25 @@ app.get('/prenotazioni', async (req, res) => {
                 return res.status(401).json({ error: 'Utente non autenticato' });
             }
             
-            // Permetti di vedere tutte le prenotazioni solo se:
-            // 1. all_bookings=true (per mappa 2D)
-            // 2. aula_id è specificato (per calendario di un'aula specifica)
-            if (all_bookings !== 'true' && !aula_id) {
-                utente_id = req.user.id;
+            if (userRole === 'studente') {
+                // Gli studenti vedono le prenotazioni della loro classe
+                if (req.user.classe_id) {
+                    student_classe_id = req.user.classe_id;
+                } else {
+                    // Se lo studente non ha una classe assegnata, vede solo le proprie prenotazioni
+                    utente_id = req.user.id;
+                }
+            } else {
+                // Docenti/ATA vedono tutte solo se:
+                // 1. all_bookings=true (per mappa 2D)
+                // 2. aula_id è specificato (per calendario di un'aula specifica)
+                if (all_bookings !== 'true' && !aula_id) {
+                    utente_id = req.user.id;
+                }
             }
         }
         
-        const prenotazioniList = await prenotazioni({ data, ora, start, end, aula_id, classe_id, utente_id });
+        const prenotazioniList = await prenotazioni({ data, ora, start, end, aula_id, classe_id, utente_id, student_classe_id });
 
         res.json(prenotazioniList);
     } catch (error) {
